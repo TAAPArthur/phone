@@ -1,5 +1,4 @@
 #!/bin/tcc -run
-#define _XOPEN_SOURCE
 #include <poll.h>
 #include <signal.h>
 #include <stdio.h>
@@ -9,6 +8,10 @@
 #include <sys/wait.h>
 #include <string.h>
 #define LEN(A) (sizeof(A)/sizeof(A[0]))
+
+#ifndef NDEBUG
+#define DEBUG(X...) dprintf(2, X)
+#endif
 
 const char LN_ENDING[] ="\r\n";
 const char MSG_ENDING=0x1A;
@@ -68,7 +71,7 @@ void receiveSMSNotification(const char*s) {
     char messageArea[3]={0};
     int index = 0 ;
     int ret= sscanf(s, "%*s \"%2s\",%d", messageArea, &index);
-    printf("Recievd SMS message %d, ME:'%s' index: %d\n",ret, messageArea, index);
+    DEBUG("Recievd SMS message %d, ME:'%s' index: %d\n",ret, messageArea, index);
     char buffer[16];
     sprintf(buffer,"AT+CMGR=%d%s", index, LN_ENDING);
     writeData(buffer);
@@ -80,7 +83,7 @@ void readSMS(const char*s) {
         int ret= sscanf(s, "%*s %*d,,%d", &len);
         if(ret==0)
             ret = sscanf(s, "%*s %*d,%*d,%d", &len);
-        printf("%d, %d\n",ret, len);
+        DEBUG("%d, %d\n",ret, len);
     }
 }
 typedef struct {
@@ -146,7 +149,7 @@ int main(int args, const char* argv[]) {
     }
     struct pollfd fds[] = {{ttyFD, POLLIN}, {STDIN_FILENO, POLLIN}};
     int numFDs = LEN(fds);
-    printf("Starting\n");
+    DEBUG("Starting\n");
     while(poll(fds, numFDs, -1) >= 0) {
         char buf[4096]={0};
         for(int i = 0; i < LEN(fds); i++) {
@@ -158,18 +161,18 @@ int main(int args, const char* argv[]) {
                 int chars = readLine(fds[i].fd, buf);
                 if (chars) {
                     if(ttyFD == fds[i].fd) {
-                        printf("'%s' (%ld)\n",  buf, strlen(buf));
+                        DEBUG("'%s' (%ld)\n",  buf, strlen(buf));
                         processResponse(buf);
                         if(isWaiting() && numFDs ==1)
                             exit(status);
                     } else if(!isWaiting()) {
                         if(strncmp(buf, "DONE:", 5)==0) {
-                            printf("DEBUG2: '%s' (%ld)\n",  buf+5, strlen(buf));
+                            DEBUG("DEBUG2: '%s' (%ld)\n",  buf+5, strlen(buf));
                             buf[strlen(buf)] = MSG_ENDING;
                             writeData(buf+5);
                         }
                         else {
-                            printf("DEBUG: '%s' (%ld) %d\n",  buf, strlen(buf), fds[i].revents);
+                            DEBUG("DEBUG: '%s' (%ld) %d\n",  buf, strlen(buf), fds[i].revents);
                             writeData(buf);
                             writeData(LN_ENDING);
                             setWaiting(1);
@@ -186,7 +189,7 @@ int main(int args, const char* argv[]) {
                     if(!isWaiting())
                         exit(status);
                     int chars = readLine(fds[i].fd, buf);
-                    printf("End of stdin: '%s' %d\n\n", buf, chars);
+                    DEBUG("End of stdin: '%s' %d\n\n", buf, chars);
                     numFDs--;
                     break;
                 }
