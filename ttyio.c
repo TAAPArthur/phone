@@ -41,6 +41,7 @@ void writeData(const char* s) {
 }
 
 int subCmdFD[2];
+const char* SMS_READ_CMD = "/bin/save-sms";
 
 void startReadingSMS() {
     readingSMS = 1;
@@ -48,13 +49,11 @@ void startReadingSMS() {
         perror("pipe");
     }
 
-    write(subCmdFD[1], "test\n", 5);
-
     if(!fork()) {
         dup2(subCmdFD[0], STDIN_FILENO);
         close(subCmdFD[1]);
         close(subCmdFD[0]);
-        execl("/bin/sh", "/bin/sh", "-c", "cat - >> /tmp/file.txt");
+        execl(SMS_READ_CMD, SMS_READ_CMD);
     }
     close(subCmdFD[0]);
 }
