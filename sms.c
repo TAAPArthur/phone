@@ -12,10 +12,12 @@
 #include <sys/types.h>
 #include <stdint.h>
 typedef char bool ;
-#ifdef DEBUG
+#ifndef NDEBUG
 #define DEBUG(X...) printf(X)
+#define TRACE(X...) printf(X)
 #else
 #define DEBUG(X...)
+#define TRACE(X...)
 #endif
 
 char FIELD_SEPARATOR = '\t';
@@ -30,14 +32,19 @@ void _convert(const char*c, char len, unsigned char* buffer) {
         sscanf(c+i, "%2hhx", buffer+i/2);
     }
 }
-char readBinaryEncodedOctet(const char**str) {
+char readBinaryEncodedOctetSigned(const char**str, bool asSigned) {
     char buffer[2] = {str[0][1], str[0][0]};
+    if(asSigned) {
+        if (buffer[1] >= '8' && buffer[1] < 'A')
+            buffer[1] -= 8;
+        else if (buffer[1] >= 'A')
+            buffer[1] -= 'A' - '9' - 7;
+    }
     unsigned char c=0;
 
     sscanf(buffer, "%2hhd", &c);
     (*str)+=2;
     return c;
-
 }
 unsigned char readByte(const char**str) {
     unsigned char c=0;
@@ -68,6 +75,7 @@ void decodeSept(const char*str, int len, char* buffer) {
         carry = (rawByte & ~(mask)) >> (7-i%8);
     }
     buffer[n]=0;
+    assert(!str[0]);
 }
 int encodeSept(const char*str, int len, char* buffer) {
     unsigned char mask = -1;
@@ -91,26 +99,26 @@ int encodeSept(const char*str, int len, char* buffer) {
 
 
 char buffer[1000]={0};
-void swapNibble(const char*c, int len, char*buffer) {
+int swapNibble(const char*c, int len, char*buffer) {
     // convert from swap nibble
-    for(int i=0; i<len;i+=2) {
+    int i;
+    for(i=0; i<len;i+=2) {
         buffer[i] = c[i+1];
         buffer[i+1] = c[i];
     }
+    return i;
 }
 
 char* readTime(const char**c, char*result) {
     for(int i=0;i<7;i++)
-        result[i]=readBinaryEncodedOctet(c);
+        result[i]=readBinaryEncodedOctetSigned(c, i==6);
     return result;
 }
 char* readPhoneNumber(const char**c, int len, char*result) {
-    swapNibble(*c, len, result);
+    *c+=swapNibble(*c, len, result);
     if(result[len]=='F') {
-        result[len - 1] = *c[len-1];
         result[len] = 0;
     }
-    *c+=len;
     return result;
 }
 int encodePhoneNumber(const char*c, int len, char* buffer) {
@@ -142,17 +150,49 @@ char writeBit(uint8_t *byte, bool bit) {
 void readPhoneAddress(const char**c, char*number) {
     char lengthOfPhoneNumber=readByte(c);
     readByte(c);// number type
-    //printf("R: %d %d %x\n",lengthOfPhoneNumber, realLength, typeOfNumber);
     readPhoneNumber(c, lengthOfPhoneNumber, number);
+    assert(strlen(number)==lengthOfPhoneNumber);
 }
-void decodeUserMessage(const char**c, GSMEncodingType type, char* buffer) {
-    char dataLength=readByte(c);
-    switch(type & 0xF) {
+
+void decodeUCS2(const char*str, int len, char* buffer) {
+
+    for(int i=0;i<len;i++) {
+        readByte(&str);
+        char c = readByte(&str);
+        buffer[i] = c;
+    }
+    buffer[len]=0;
+}
+void decodeUserMessage(const char**c, uint8_t type, char* buffer) {
+    uint8_t dataLength=readByte(c);
+    GSMEncodingType  dateEncoding = GSM_7_BIT;
+    GSMEncodingType  TYPES[]={GSM_7_BIT, GSM_8_BIT, GSM_UCS2 };
+    if(type <= 127 || type >= 240)
+        dateEncoding = TYPES[type/4 %4];
+    printf("%s\n", *c);
+    printf("%ld\n", strlen(*c));
+    int f=open("hex.dump", O_CREAT|O_RDWR, 0666);
+    perror("open");
+    assert(f!=-1);
+    switch(dateEncoding ) {
         case GSM_7_BIT:
             decodeSept(*c, dataLength, buffer);
             break;
         case GSM_8_BIT:
-            strcpy(buffer, *c);
+            for(int i=0;*c && i<102;i++){
+                char a= readByte(c);
+                write(f, &a, 1);
+                //printf("%c", a);
+                printf("'%s' (%ld)\n",*c, strlen(*c));
+            }
+            break;
+
+            for(int i=0;*c;i++){
+                buffer[i] = readByte(c);
+            }
+            break;
+        case GSM_UCS2:
+            decodeUCS2(*c, dataLength, buffer);
             break;
         default:
             die("Unsupported gsm type");
@@ -185,8 +225,8 @@ void readConcatenatedSMS(const char**c, int lengthOfRestOfHeader ){
     if(lengthOfRestOfHeader ==4) {
         csmsRefNumber = (csmsRefNumber <<8) |readByte(c);
     }
-    //char totalParts = readByte(c); // total parts
-    //char seqNumber = readByte(c); // seqNumber
+    readByte(c); // total parts
+    readByte(c); // seqNumber
     //printf("%c%d %d %d", FIELD_SEPARATOR, csmsRefNumber, seqNumber, totalParts);
 }
 
@@ -203,7 +243,7 @@ void readUserHeader(const char**c){
             *c+=lengthOfRestOfHeader;
     }
 }
-void decodeUserHeaderAndMessage(const char**c, bool userDataHeaderPresent,GSMEncodingType type){
+void decodeUserHeaderAndMessage(const char**c, bool userDataHeaderPresent,char type){
     char message[MAX_SMS_LEN] = {0};
     if(userDataHeaderPresent) {
         readUserHeader(c);
@@ -213,7 +253,7 @@ void decodeUserHeaderAndMessage(const char**c, bool userDataHeaderPresent,GSMEnc
 }
 void printTimeNumber(char timeParts[7], char*number){
     if(timeParts)
-        printf("%d/%d/%d %d:%d:%d %d", timeParts[0], timeParts[1], timeParts[2], timeParts[3], timeParts[4], timeParts[5], timeParts[6]);
+        printf("%02d/%02d/%02d %d:%d:%d %d", timeParts[0], timeParts[1], timeParts[2], timeParts[3], timeParts[4], timeParts[5], timeParts[6]);
     else
         printf("0");
     printf("%c%s", FIELD_SEPARATOR, number);
@@ -226,7 +266,7 @@ void decodeSMSDeliver(const char**c, uint8_t firstByte) {
     bool userDataHeaderPresent = readBit(&firstByte);
     readBit(&firstByte); //replyPath
     assert(firstByte == 0);
-    char number[MAX_PHONE_NUMBER_SIZE ];
+    char number[MAX_PHONE_NUMBER_SIZE]={0};
     readPhoneAddress(c, number);
     readByte(c);// TP-PID Protocol identifier
     char dataCoding = readByte(c);
@@ -272,38 +312,6 @@ void decodeSMSMessage(const char*c) {
             decodeSMSSubmit(&c, pduType);
             break;
     }
-/*
-    //c+=2;// Skip TP_Message_Reference
-    char lengthOfPhoneNumber=readByte(&c);
-    unsigned char typeOfNumber=readByte(&c);
-    char realLength = lengthOfPhoneNumber + lengthOfPhoneNumber%2;
-    //printf("R: %d %d %x\n",lengthOfPhoneNumber, realLength, typeOfNumber);
-    long senderNumber = readPhoneNumber(c, lengthOfPhoneNumber);
-    //printf("Number %ld\n", senderNumber);
-    c+=realLength;
-    c+=2;// Skip TP-PID Protocol identifier
-    char dataCoding = readByte(&c);
-    long time = readTime(&c);
-    const char* timeParts = (char*)&time;
-    char dataLength=readByte(&c);
-    char buffer[dataLength*8/7];
-    switch(dataCoding ) {
-        case GSM_7_BIT:
-            decodeSept(c, dataLength, buffer);
-            break;
-        case GSM_UCS2 :
-            printf("%s\n",c);
-            int fd = open("/tmp/test", O_WRONLY|O_CREAT);
-            short temp;
-            sscanf(c, "%hd", &temp);
-            write(fd, &temp, sizeof(temp));
-            printf("TEMP: %d\n", temp);
-            break;
-    }
-    printf("%d/%d/%d %d:%d:%d %d", timeParts[0], timeParts[1], timeParts[2], timeParts[3], timeParts[4], timeParts[5], timeParts[6]);
-    printf("%c%ld", FIELD_SEPARATOR, senderNumber);
-    printf("%c%s%c", FIELD_SEPARATOR, buffer, LN_TERMINATOR);
-*/
 }
 
 void encodeUserMessage(char*c, const char*msg, int msgLen, GSMEncodingType type) {
@@ -428,4 +436,5 @@ int main(int argc, char * argv[]) {
         }
         encodeSMSMessage(number, buffer, alphabet);
     }
+    exit(0);
 }
