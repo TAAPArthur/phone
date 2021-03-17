@@ -75,6 +75,7 @@ void decodeSept(const char*str, int len, char* buffer) {
         carry = (rawByte & ~(mask)) >> (7-i%8);
     }
     buffer[n]=0;
+    TRACE("Remaining string '%s' %d %d", str, strlen(str), len);
     assert(!str[0]);
 }
 int encodeSept(const char*str, int len, char* buffer) {
@@ -169,8 +170,8 @@ void decodeUserMessage(const char**c, uint8_t type, char* buffer) {
     GSMEncodingType  TYPES[]={GSM_7_BIT, GSM_8_BIT, GSM_UCS2 };
     if(type <= 127 || type >= 240)
         dateEncoding = TYPES[type/4 %4];
-    printf("%s\n", *c);
-    printf("%ld\n", strlen(*c));
+    DEBUG("%s\n", *c);
+    DEBUG("%ld\n", strlen(*c));
     int f=open("hex.dump", O_CREAT|O_RDWR, 0666);
     perror("open");
     assert(f!=-1);
