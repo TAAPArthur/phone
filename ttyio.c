@@ -147,6 +147,11 @@ int main(int args, const char* argv[]) {
     if(ttyFD==-1) {
         exit(2);
     }
+
+    write(ttyFD, &MSG_ENDING, 1);
+    writeData("AT+CMGL=4");
+    writeData(LN_ENDING);
+    setWaiting(1);
     struct pollfd fds[] = {{ttyFD, POLLIN}, {STDIN_FILENO, POLLIN}};
     int numFDs = LEN(fds);
     DEBUG("Starting\n");
