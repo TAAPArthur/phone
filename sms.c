@@ -20,7 +20,7 @@ typedef char bool ;
 #define TRACE(X...)
 #endif
 
-char FIELD_SEPARATOR = '\t';
+char FIELD_SEPARATOR = ' ';
 char LN_TERMINATOR = '\n';
 
 void die(const char*msg){
@@ -251,12 +251,13 @@ void decodeUserHeaderAndMessage(const char**c, bool userDataHeaderPresent,char t
     decodeUserMessage(c,type, message);
     printf("%c%s%c", FIELD_SEPARATOR, message, LN_TERMINATOR);
 }
+
 void printTimeNumber(char timeParts[7], char*number){
     if(timeParts)
-        printf("%02d/%02d/%02d %d:%d:%d %d", timeParts[0], timeParts[1], timeParts[2], timeParts[3], timeParts[4], timeParts[5], timeParts[6]);
+        printf("Time:%c%02d/%02d/%02d %d:%d:%d %d%c", FIELD_SEPARATOR, timeParts[0], timeParts[1], timeParts[2], timeParts[3], timeParts[4], timeParts[5], timeParts[6], LN_TERMINATOR);
     else
-        printf("0");
-    printf("%c%s", FIELD_SEPARATOR, number);
+        printf("Time:%c0%c", FIELD_SEPARATOR, LN_TERMINATOR);
+    printf("Number:%c%s%c", FIELD_SEPARATOR, number, LN_TERMINATOR);
 }
 
 void decodeSMSDeliver(const char**c, uint8_t firstByte) {
