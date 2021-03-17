@@ -20,6 +20,6 @@ sms -d | {
     fi
     SMS_DATE_DIR="$SMS_DIR/$(date -I)"
     mkdir -p $SMS_DATE_DIR
-    printf "%s\t%s\t%s\0" "$(date -Iseconds)" "$timestamp" "$msg" >> $SMS_DATE_DIR/sms.txt
+    printf "%s\t%s\t%s\n\0" "$(date -Iseconds)" "$timestamp" "$msg" >> $SMS_DATE_DIR/sms.txt
     [ -z "$SMS_INDEX" ] || printf "%s" $timestamp > $SMS_INDEX_FILE
 }
