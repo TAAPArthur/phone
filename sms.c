@@ -13,8 +13,8 @@
 #include <stdint.h>
 typedef char bool ;
 #ifndef NDEBUG
-#define DEBUG(X...) printf(X)
-#define TRACE(X...) printf(X)
+#define DEBUG(X...) dprintf(2, X)
+#define TRACE(X...) dprintf(2, X)
 #else
 #define DEBUG(X...)
 #define TRACE(X...)
