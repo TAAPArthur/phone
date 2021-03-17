@@ -6,6 +6,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <fcntl.h>
+#include <sys/wait.h>
 #include <string.h>
 #define LEN(A) (sizeof(A)/sizeof(A[0]))
 
@@ -39,31 +40,36 @@ void writeData(const char* s) {
     write(ttyFD, s, strlen(s));
 }
 
-int subCmdFDs[2];
+int subCmdFD[2];
 
 void startReadingSMS() {
     readingSMS = 1;
-    pipe(subCmdFDs);
-    if(!fork()) {
-        dup2(subCmdFDs[0], STDIN_FILENO);
-        close(subCmdFDs[1]);
-        close(subCmdFDs[0]);
-        execl("/bin/sh", "/bin/sh", "-c", "cat -");
+    if(pipe(subCmdFD) ==-1){
+        perror("pipe");
     }
-    close(subCmdFDs[0]);
+
+    write(subCmdFD[1], "test\n", 5);
+
+    if(!fork()) {
+        dup2(subCmdFD[0], STDIN_FILENO);
+        close(subCmdFD[1]);
+        close(subCmdFD[0]);
+        execl("/bin/sh", "/bin/sh", "-c", "cat - >> /tmp/file.txt");
+    }
+    close(subCmdFD[0]);
 }
 
 void commitSMSRead() {
-    printf("Committing SMS read\n");
     readingSMS = 0;
-    close(subCmdFDs[1]);
+    close(subCmdFD[1]);
+    wait(NULL);
 }
 
 void receiveSMSNotification(const char*s) {
     char messageArea[3]={0};
     int index = 0 ;
     int ret= sscanf(s, "%*s \"%2s\",%d", messageArea, &index);
-    printf("%d, ME:'%s' index: %d\n",ret, messageArea, index);
+    printf("Recievd SMS message %d, ME:'%s' index: %d\n",ret, messageArea, index);
     char buffer[16];
     sprintf(buffer,"AT+CMGR=%d%s", index, LN_ENDING);
     writeData(buffer);
@@ -101,16 +107,16 @@ void processResponse(char* response) {
             if(readingSMS)
                 commitSMSRead();
             if(responses[i].f) {
-                printf("Running command %d\n", i);
                 responses[i].f(response);
                 return;
             }
         }
     }
-    if(readingSMS)
-       if(-1== write(subCmdFDs[1], response, strlen(response))){
+    if(readingSMS) {
+       if(-1== write(subCmdFD[1], response, strlen(response))){
            perror("Write");
        }
+    }
 }
 
 
