@@ -35,10 +35,10 @@ void _convert(const char*c, char len, unsigned char* buffer) {
 char readBinaryEncodedOctetSigned(const char**str, bool asSigned) {
     char buffer[2] = {str[0][1], str[0][0]};
     if(asSigned) {
-        if (buffer[1] >= '8' && buffer[1] < 'A')
-            buffer[1] -= 8;
-        else if (buffer[1] >= 'A')
-            buffer[1] -= 'A' - '9' - 7;
+        if (buffer[0] >= '8' && buffer[0] < 'A')
+            buffer[0] -= 8;
+        else if (buffer[0] >= 'A')
+            buffer[0] = buffer[0] - 'A' + '9' - 7;
     }
     unsigned char c=0;
 
