@@ -254,7 +254,7 @@ void decodeUserHeaderAndMessage(const char**c, bool userDataHeaderPresent,char t
 
 void printTimeNumber(char timeParts[7], char*number){
     if(timeParts)
-        printf("Time:%c%02d/%02d/%02d %d:%d:%d %d%c", FIELD_SEPARATOR, timeParts[0], timeParts[1], timeParts[2], timeParts[3], timeParts[4], timeParts[5], timeParts[6], LN_TERMINATOR);
+        printf("Time:%c%02d/%02d/%02d %02d:%02d:%02d %hhd%c", FIELD_SEPARATOR, timeParts[0], timeParts[1], timeParts[2], timeParts[3], timeParts[4], timeParts[5], timeParts[6], LN_TERMINATOR);
     else
         printf("Time:%c0%c", FIELD_SEPARATOR, LN_TERMINATOR);
     printf("Number:%c%s%c", FIELD_SEPARATOR, number, LN_TERMINATOR);
