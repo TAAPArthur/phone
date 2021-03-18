@@ -13,6 +13,8 @@
 #define DEBUG(X...) dprintf(2, X)
 #endif
 
+#define SMS_INDEX_ENV_NAME "SMS_INDEX"
+
 const char LN_ENDING[] ="\r\n";
 const char MSG_ENDING=0x1A;
 const char * device = "/dev/ttyUSB2";
@@ -69,11 +71,12 @@ void commitSMSRead() {
 
 void receiveSMSNotification(const char*s) {
     char messageArea[3]={0};
-    int index = 0 ;
-    int ret= sscanf(s, "%*s \"%2s\",%d", messageArea, &index);
-    DEBUG("Recievd SMS message %d, ME:'%s' index: %d\n",ret, messageArea, index);
+    char index[4];
+    int ret = sscanf(s, "%*s \"%2s\",%3s", messageArea, &index);
+    setenv(SMS_INDEX_ENV_NAME, index, 1);
+    DEBUG("Received SMS message %d, ME:'%s' index: %s\n",ret, messageArea, index);
     char buffer[16];
-    sprintf(buffer,"AT+CMGR=%d%s", index, LN_ENDING);
+    sprintf(buffer,"AT+CMGR=%s%s", index, LN_ENDING);
     writeData(buffer);
     startReadingSMS();
 }
