@@ -7,25 +7,14 @@
 #include <fcntl.h>
 #include <sys/wait.h>
 #include <string.h>
+#include "ttyio.h"
 #define LEN(A) (sizeof(A)/sizeof(A[0]))
 
 #ifndef NDEBUG
 #define DEBUG(X...) dprintf(2, X)
 #endif
-
-#define SMS_INDEX_ENV_NAME "SMS_INDEX"
-
-const char LN_ENDING[] ="\r\n";
-#define MSG_ENDING 0x1A
-const char MSG_ENDING_STR[] = {MSG_ENDING};
-const char * device = "/dev/ttyUSB2";
 int ttyFD;
-#define SUCCESS 0
-#define WAITING 3
-#define ERROR 2
-#define IN_PROGRESS 4
-#define UNDEFINED 255
-int status = UNDEFINED;
+int status = SUCCESS;
 int waiting = 0;
 int isWaiting() {
     return waiting;
@@ -39,16 +28,12 @@ void setStatus(int s) {
     status = s;
     readingSMS = 0;
 }
-void markSuccess(){setStatus(SUCCESS);}
-void markError(){setStatus(ERROR);}
-void clearWaiting(){setStatus(IN_PROGRESS);}
 void writeData(const char* s) {
     write(ttyFD, s, strlen(s));
     setWaiting(1);
 }
 
-int subCmdFD[2];
-const char* SMS_READ_CMD = "/bin/save-sms";
+static int subCmdFD[2];
 
 void startReadingSMS() {
     readingSMS = 1;
@@ -91,22 +76,6 @@ void readSMS(const char*s) {
         DEBUG("%d, %d\n",ret, len);
     }
 }
-typedef struct {
-    const char* response;
-    void(*f)(const char*s);
-} Response;
-
-
-Response responses[] = {
-    {"OK", markSuccess},
-    {">", clearWaiting},
-    {"+CME ERROR: ", markError},
-    {"ERROR", markError},
-    {"RING"},
-    {"+CMGL: ", startReadingSMS},
-    {"+CMTI: ", receiveSMSNotification},
-    {"+CMGR: ", readSMS}
-};
 
 void processResponse(char* response) {
     for(int i=0;i<LEN(responses);i++) {
@@ -126,7 +95,6 @@ void processResponse(char* response) {
     }
 }
 
-
 int readLine(int fd, char*buffer) {
     int len = 255;
     int i;
@@ -145,10 +113,6 @@ int readLine(int fd, char*buffer) {
     }
     return i;
 }
-const char* onStartCmds[] = {
-    MSG_ENDING_STR, // end any existing message prompt
-    "AT+CMGL=4", // dump all stored messages
-};
 void onStart(int ttyFD) {
     char buf[4096]={0};
     struct pollfd fds[] = {{ttyFD, POLLIN}};
@@ -196,7 +160,7 @@ int main(int args, const char* argv[]) {
                         DEBUG("'%s' (%ld)\n",  buf, strlen(buf));
                         processResponse(buf);
                         if(isWaiting() && numFDs ==1)
-                            exit(status);
+                            exit(2);
                     } else if(!isWaiting()) {
                         if(strncmp(buf, "DONE:", 5)==0) {
                             DEBUG("DEBUG2: '%s' (%ld)\n",  buf+5, strlen(buf));
