@@ -339,6 +339,13 @@ int getMaxMessageSizePerType(GSMEncodingType type) {
         case GSM_UCS2: return 70;
     }
 }
+void writeMessage(const char*encodedMessage) {
+    static char buffer[MAX_TOTAL_SMS_LEN + 32];
+    assert(strlen(buffer) <= MAX_TOTAL_SMS_LEN);
+    DEBUG("Total PDU size %ld\n", strlen(encodedMessage));
+    sprintf(buffer, "AT+CMGS=%ld\n%s%c\n", (strlen(encodedMessage)-2)/2, encodedMessage, 0x1A);
+    write(STDOUT_FILENO, buffer, strlen(buffer));
+}
 void encodeSMSMessage(const char*number, const char*msg, int type) {
     char buffer[MAX_TOTAL_SMS_LEN ] = {0};
     const int realMessageLen = strlen(msg);
@@ -375,17 +382,14 @@ void encodeSMSMessage(const char*number, const char*msg, int type) {
             DEBUG("Message len: %d %d\n", realMessageLen, type);
             char*userMessageStart= writeConcatenatedSMS(ptr,refNumber, realMessageLen, i, &remainder);
             encodeUserMessage(userMessageStart, msg + i*MAX_CONCAT_SMS_LEN ,MAX_CONCAT_SMS_LEN , type);
-            DEBUG("Total PDU size %ld\n", strlen(buffer));
-            assert(strlen(buffer) <= MAX_TOTAL_SMS_LEN);
-            printf("AT+CMGS=%ld\n%s%c\n", (strlen(buffer)-2)/2, buffer, 0x1A);
+            writeMessage(buffer);
             i++;
         }while(remainder);
     } else{
         DEBUG("Using regular sms messages; current buffer: %ld\n%s \n",strlen(buffer), buffer);
         writeByte(strlen(msg), &ptr);
         encodeUserMessage(ptr, msg, realMessageLen, type);
-        DEBUG("Total PDU size %ld\n", strlen(buffer));
-        printf("AT+CMGS=%ld\n%s%c\n", (strlen(buffer)-2)/2, buffer, 0x1A);
+        writeMessage(buffer);
     }
 }
 void usage(const char* programName) {
