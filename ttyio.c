@@ -16,7 +16,8 @@
 #define SMS_INDEX_ENV_NAME "SMS_INDEX"
 
 const char LN_ENDING[] ="\r\n";
-const char MSG_ENDING=0x1A;
+#define MSG_ENDING 0x1A
+const char MSG_ENDING_STR[] = {MSG_ENDING};
 const char * device = "/dev/ttyUSB2";
 int ttyFD;
 #define SUCCESS 0
@@ -43,6 +44,7 @@ void markError(){setStatus(ERROR);}
 void clearWaiting(){setStatus(IN_PROGRESS);}
 void writeData(const char* s) {
     write(ttyFD, s, strlen(s));
+    setWaiting(1);
 }
 
 int subCmdFD[2];
@@ -118,7 +120,7 @@ void processResponse(char* response) {
         }
     }
     if(readingSMS) {
-       if(-1== write(subCmdFD[1], response, strlen(response))){
+       if(-1 == write(subCmdFD[1], response, strlen(response))){
            perror("Write");
        }
     }
@@ -143,6 +145,30 @@ int readLine(int fd, char*buffer) {
     }
     return i;
 }
+const char* onStartCmds[] = {
+    MSG_ENDING_STR, // end any existing message prompt
+    "AT+CMGL=4", // dump all stored messages
+};
+void onStart(int ttyFD) {
+    char buf[4096]={0};
+    struct pollfd fds[] = {{ttyFD, POLLIN}};
+    for(int i = 0; i < LEN(onStartCmds); i++) {
+        writeData(onStartCmds[i]);
+        writeData(LN_ENDING);
+        while(isWaiting()){
+            int ret = poll(fds, 1, -1);
+            if(ret = -1) {
+                perror("Poll");
+                exit(1);
+            }
+            int chars = readLine(ttyFD, buf);
+            if (chars) {
+                DEBUG("'%s' (%ld)\n",  buf, strlen(buf));
+                processResponse(buf);
+            }
+        }
+    }
+}
 int main(int args, const char* argv[]) {
 
     signal(SIGPIPE, SIG_IGN);
@@ -150,14 +176,12 @@ int main(int args, const char* argv[]) {
     if(ttyFD==-1) {
         exit(2);
     }
+    DEBUG("Initializing\n");
+    onStart(ttyFD);
+    DEBUG("Starting\n");
 
-    write(ttyFD, &MSG_ENDING, 1);
-    writeData("AT+CMGL=4");
-    writeData(LN_ENDING);
-    setWaiting(1);
     struct pollfd fds[] = {{ttyFD, POLLIN}, {STDIN_FILENO, POLLIN}};
     int numFDs = LEN(fds);
-    DEBUG("Starting\n");
     while(poll(fds, numFDs, -1) >= 0) {
         char buf[4096]={0};
         for(int i = 0; i < LEN(fds); i++) {
