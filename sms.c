@@ -1,4 +1,3 @@
-#!/bin/tcc -run
 #include <stdio.h>
 #include <string.h>
 #include <stdio.h>
@@ -11,16 +10,7 @@
 #include "sms.h"
 #include <sys/types.h>
 #include <stdint.h>
-typedef char bool ;
-#ifndef NDEBUG
-#define DEBUG(X...) dprintf(2, X)
-#define TRACE(X...) dprintf(2, X)
-#else
-#define DEBUG(X...)
-#define TRACE(X...)
-#endif
 
-char FIELD_SEPARATOR = ' ';
 char LN_TERMINATOR = '\n';
 
 void die(const char*msg){
@@ -56,38 +46,57 @@ void writeByte(char byte, char**ptr) {
     sprintf(*ptr, "%02hhx", byte);
     *ptr+=2;
 }
-void decodeSept(const char*str, int len, char* buffer) {
+void decodeSeptWithPadding(const char*str, int len, int padding, char* buffer) {
     const int numOctets = len*8/7;
     unsigned char mask = -1;
     unsigned char carry = 0;
+    int i = 0 ;
     int n=0;
-    for(int i=0;i<numOctets;i++) {
+    if(padding) {
+        unsigned char rawByte = readByte(&str);
+        buffer[n++] = rawByte >> padding;
+    }
+    for(int c=0; c<numOctets && str[0];i++, c++) {
+        DEBUG("%d our of %d numOctets\n", c, numOctets);
+        assert(str[0]);
         if(i%8 == 7 && i) {
             buffer[n++] = carry;
             carry = 0;
             mask = -1;
             continue;
         }
-        mask = mask >> 1;
+        mask = 255 >> (i%8+1);
         unsigned char rawByte = readByte(&str);
 
         buffer[n++] = ((rawByte& mask) << (i%8)) | carry ;
         carry = (rawByte & ~(mask)) >> (7-i%8);
     }
     buffer[n]=0;
-    TRACE("Remaining string '%s' %d %d", str, strlen(str), len);
-    assert(!str[0]);
+    TRACE("Remaining string '%s' %d %d\n", str, strlen(str), len);
+    //assert(!str[0]);
 }
-int encodeSept(const char*str, int len, char* buffer) {
+void decodeSept(const char*str, int len, char* buffer) {
+    decodeSeptWithPadding(str, len, 0, buffer);
+}
+int encodeSeptWithPadding(const char*str, int len, int padding, char* buffer) {
     unsigned char mask = -1;
     int n=0;
-    for(int i=0;i<len && str[i];i++) {
+    int carry = 0;
+    int i = 0;
+    if(padding) {
+        i = 7 - padding;
+        mask = 255 << i;
+        sprintf(buffer+n, "%02hhx", (0xFF & (str[0] << (7-i%8))));
+        i++;
+        n+=2;
+    }
+    for(int c=0;c<len && str[c];i++, c++) {
         if(i%8 == 7) {
             mask = -1;
             continue;
         }
-        unsigned char rawByte = str[i];
-        unsigned char nextByte = str[i+1];
+        unsigned char rawByte = str[c];
+        unsigned char nextByte = str[c+1];
         sprintf(buffer+n, "%02hhx", ((rawByte& mask) >> (i%8)) | (0xFF & (nextByte << (7-i%8))));
         n+=2;
         mask = mask << 1;
@@ -96,6 +105,9 @@ int encodeSept(const char*str, int len, char* buffer) {
     DEBUG("%ld %ld\n", strlen(str), strlen(buffer));
     buffer[n]=0;
     return strlen(buffer);
+}
+int encodeSept(const char*str, int len, char* buffer) {
+    return encodeSeptWithPadding(str, len, 0, buffer);
 }
 
 
@@ -132,7 +144,7 @@ int encodePhoneNumber(const char*c, int len, char* buffer) {
 
 
 char readBits(uint8_t *byte, int N) {
-    char bits = *byte & N;
+    char bits = *byte & ((1<<N) - 1);
     *byte >>=N;
     return bits;
 }
@@ -164,17 +176,12 @@ void decodeUCS2(const char*str, int len, char* buffer) {
     }
     buffer[len]=0;
 }
-void decodeUserMessage(const char**c, uint8_t type, char* buffer) {
-    uint8_t dataLength=readByte(c);
+void decodeUserMessage(const char**c, uint8_t dataLength, uint8_t type, char* buffer) {
     GSMEncodingType  dateEncoding = GSM_7_BIT;
     GSMEncodingType  TYPES[]={GSM_7_BIT, GSM_8_BIT, GSM_UCS2 };
     if(type <= 127 || type >= 240)
         dateEncoding = TYPES[type/4 %4];
-    DEBUG("%s\n", *c);
-    DEBUG("%ld\n", strlen(*c));
-    int f=open("hex.dump", O_CREAT|O_RDWR, 0666);
-    perror("open");
-    assert(f!=-1);
+    DEBUG("Remainder: %s (%ld); Data len %d\n", *c, strlen(*c), dataLength);
     switch(dateEncoding ) {
         case GSM_7_BIT:
             decodeSept(*c, dataLength, buffer);
@@ -182,7 +189,6 @@ void decodeUserMessage(const char**c, uint8_t type, char* buffer) {
         case GSM_8_BIT:
             for(int i=0;*c && i<102;i++){
                 char a= readByte(c);
-                write(f, &a, 1);
                 //printf("%c", a);
                 printf("'%s' (%ld)\n",*c, strlen(*c));
             }
@@ -207,13 +213,14 @@ int setenvInt(const char*name, int value) {
 
 char*writeConcatenatedSMS(char*ptr, int refNumber, int totalSize, int index,  int*messagesLeftAfterThis ){
     int numParts = (totalSize -1) / MAX_CONCAT_SMS_LEN +1;
-    *messagesLeftAfterThis = numParts - index - 1;
+    *messagesLeftAfterThis = numParts - index;
 
-    writeByte(messagesLeftAfterThis?MAX_SMS_LEN:UDH_CONCAT_SMS_HEADER_LEN + totalSize %MAX_CONCAT_SMS_LEN,  &ptr);
-    writeByte(UDH_CONCAT_SMS_HEADER_LEN, &ptr);
-    writeByte(CONCAT_SMS_8_BIT_REF_NUMBER, &ptr);
-    writeByte(UDH_CONCAT_SMS_HEADER_LEN-2, &ptr);
-    writeByte(0, &ptr); // leading bits of ref number used mainly to avoid having to force 7-bit aligment
+    writeByte(6, &ptr); //total header len
+    //writeByte(*messagesLeftAfterThis?MAX_SMS_LEN:UDH_CONCAT_SMS_HEADER_LEN + totalSize %MAX_CONCAT_SMS_LEN,  &ptr);
+    //writeByte(UDH_CONCAT_SMS_HEADER_LEN, &ptr);
+    writeByte(CONCAT_SMS_16_BIT_REF_NUMBER, &ptr);
+    writeByte(4, &ptr);
+    writeByte(0, &ptr); // leading bits of ref number used mainly to avoid having to force 7-bit alignment
     writeByte(refNumber, &ptr);
     writeByte(numParts, &ptr);
     writeByte(index, &ptr);
@@ -221,44 +228,52 @@ char*writeConcatenatedSMS(char*ptr, int refNumber, int totalSize, int index,  in
     return ptr;
 }
 
-void readConcatenatedSMS(const char**c, int lengthOfRestOfHeader ){
+void readConcatenatedSMS(const char**c, bool large){
     int csmsRefNumber = readByte(c);
-    if(lengthOfRestOfHeader ==4) {
+    if(large) {
         csmsRefNumber = (csmsRefNumber <<8) |readByte(c);
     }
-    readByte(c); // total parts
-    readByte(c); // seqNumber
-    //printf("%c%d %d %d", FIELD_SEPARATOR, csmsRefNumber, seqNumber, totalParts);
+    int totalParts = readByte(c); // total parts
+    int seqNumber = readByte(c); // seqNumber
+    DEBUG("INFO: %d %d %d\n", csmsRefNumber, totalParts, seqNumber);
 }
 
-void readUserHeader(const char**c){
-    readByte(c);// header len
+int readUserHeader(const char**c){
+    int headerLen = readByte(c);// header len
     int infoElementIdentifier = readByte(c);
     int lengthOfRestOfHeader = readByte(c);
+    DEBUG("IDenfitier %d %s\n", infoElementIdentifier, *c);
+    DEBUG("%d Len of rest of header %d \n",headerLen , lengthOfRestOfHeader );
     switch(infoElementIdentifier) {
         case CONCAT_SMS_8_BIT_REF_NUMBER:
         case CONCAT_SMS_16_BIT_REF_NUMBER:
-            readConcatenatedSMS(c, lengthOfRestOfHeader);
+            assert(headerLen == lengthOfRestOfHeader +2);
+            readConcatenatedSMS(c, CONCAT_SMS_16_BIT_REF_NUMBER == infoElementIdentifier);
             break;
         default:
+            DEBUG("Unknown element skipping\n");
             *c+=lengthOfRestOfHeader;
     }
+    return headerLen + 1;
 }
 void decodeUserHeaderAndMessage(const char**c, bool userDataHeaderPresent,char type){
+
+    uint8_t dataLength=readByte(c);
+    DEBUG("User data len %d\n", dataLength);
     char message[MAX_SMS_LEN] = {0};
     if(userDataHeaderPresent) {
-        readUserHeader(c);
+        dataLength -= readUserHeader(c);
     }
-    decodeUserMessage(c,type, message);
-    printf("%c%s%c", FIELD_SEPARATOR, message, LN_TERMINATOR);
+    decodeUserMessage(c,dataLength, type, message);
+    printf("%s", message);
 }
 
 void printTimeNumber(char timeParts[7], char*number){
     if(timeParts)
-        printf("Time:%c%02d/%02d/%02d %02d:%02d:%02d %hhd%c", FIELD_SEPARATOR, timeParts[0], timeParts[1], timeParts[2], timeParts[3], timeParts[4], timeParts[5], timeParts[6], LN_TERMINATOR);
+        printf("%02d/%02d/%02d %02d:%02d:%02d %hhd%c", timeParts[0], timeParts[1], timeParts[2], timeParts[3], timeParts[4], timeParts[5], timeParts[6], LN_TERMINATOR);
     else
-        printf("Time:%c0%c", FIELD_SEPARATOR, LN_TERMINATOR);
-    printf("Number:%c%s%c", FIELD_SEPARATOR, number, LN_TERMINATOR);
+        printf("0%c", LN_TERMINATOR);
+    printf("%s%c", number, LN_TERMINATOR);
 }
 
 void decodeSMSDeliver(const char**c, uint8_t firstByte) {
@@ -304,8 +319,9 @@ void decodeSMSMessage(const char*c) {
     char smscLen=readByte(&c);
     c+=smscLen*2;
     uint8_t pduType=readByte(&c);
+    DEBUG("PDU_TYPE %0x\n", pduType);
     char messageTypeIndicator = readBits(&pduType, 2);
-    DEBUG("PDU_TYPE %x\n", pduType);
+    DEBUG("Message indicator %d\n", messageTypeIndicator );
     switch(messageTypeIndicator) {
         case SMS_DELIVER:
             decodeSMSDeliver(&c, pduType);
@@ -362,7 +378,7 @@ void encodeSMSMessage(const char*number, const char*msg, int type) {
     writeBit(&pduType, 1); // Reject duplicates
     writeBits(&pduType , SMS_SUBMIT, 2);
     writeByte(pduType, &ptr);
-    DEBUG("0x%x\n",pduType);
+    DEBUG("PDU: 0x%x\n",pduType);
 
     writeByte(0x00, &ptr); // tp-message-ref; will this be auto generated?
 
@@ -375,12 +391,12 @@ void encodeSMSMessage(const char*number, const char*msg, int type) {
     writeByte(type, &ptr); // Data coding scheme
     if(splitMessage) {
         DEBUG("Using concatenated sms messages; current buffer: \n%s\n", buffer);
-        int refNumber=rand()%255;
+        char refNumber=rand()%255;
         int i=0;
         int remainder;
         do{
             DEBUG("Message len: %d %d\n", realMessageLen, type);
-            char*userMessageStart= writeConcatenatedSMS(ptr,refNumber, realMessageLen, i, &remainder);
+            char*userMessageStart= writeConcatenatedSMS(ptr,refNumber, realMessageLen, i+1, &remainder);
             encodeUserMessage(userMessageStart, msg + i*MAX_CONCAT_SMS_LEN ,MAX_CONCAT_SMS_LEN , type);
             writeMessage(buffer);
             i++;
@@ -393,17 +409,17 @@ void encodeSMSMessage(const char*number, const char*msg, int type) {
     }
 }
 void usage(const char* programName) {
-    fprintf(stderr, "Usage: %s [-78] number or %s [-f field_sep] [-z]  \n", programName, programName);
+    dprintf(STDERR_FILENO, "Usage: %s [-78] number or %s [-f field_sep] [-z]  \n", programName, programName);
 }
 
-int main(int argc, char * argv[]) {
+int __attribute__((weak)) main(int argc, char * argv[]) {
     int alphabet = GSM_7_BIT;
     int decode = 0;
     int opt;
-    while((opt=getopt(argc, argv, "f:zhd78"))!=-1) {
+    while((opt=getopt(argc, argv, "f:l:zhd78"))!=-1) {
         switch(opt) {
-            case 'f':
-                FIELD_SEPARATOR = optarg[0];
+            case 'l':
+                LN_TERMINATOR = optarg[0];
                break;
             case 'z':
                 LN_TERMINATOR = 0;

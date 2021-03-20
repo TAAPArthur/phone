@@ -1,6 +1,14 @@
 #ifndef SMS_H
 #define SMS_H
 
+#ifndef NDEBUG
+#define DEBUG(X...) dprintf(2, X)
+#define TRACE(X...) dprintf(2, X)
+#else
+#define DEBUG(X...)
+#define TRACE(X...)
+#endif
+
 #define INTERNATIONAL_FORMAT 0x91
 #define MAX_SMS_LEN 255 // 140
 #define MAX_TOTAL_SMS_LEN (255*2 +2)
@@ -9,6 +17,9 @@
 
 #define CONCAT_SMS_8_BIT_REF_NUMBER 0x00
 #define CONCAT_SMS_16_BIT_REF_NUMBER 0x08
+
+#define CONCAT_SMS_8_UDL_FULL_LENGTH 5
+#define CONCAT_SMS_16_UDL_FULL_LENGTH 6
 
 typedef enum {
     GSM_7_BIT= 0x00,
@@ -32,4 +43,6 @@ typedef struct {
     char type;
     char number[10];
 }PhoneNumber ;
+
+typedef char bool ;
 #endif
