@@ -123,7 +123,7 @@ void onStart(int ttyFD) {
         writeData(LN_ENDING);
         while(isWaiting()){
             int ret = poll(fds, 1, -1);
-            if(ret = -1) {
+            if(ret == -1) {
                 perror("Poll");
                 exit(1);
             }
