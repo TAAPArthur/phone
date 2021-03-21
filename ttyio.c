@@ -154,15 +154,13 @@ int main(int args, const char* argv[]) {
             if(fds[i].revents & POLLIN) {
                 if(isWaiting() && ttyFD != fds[i].fd) {
                     sleep(1);
-                    continue;
+                    break;
                 }
                 int chars = readLine(fds[i].fd, buf);
                 if (chars) {
                     if(ttyFD == fds[i].fd) {
                         DEBUG("'%s' (%ld)\n",  buf, strlen(buf));
                         processResponse(buf);
-                        if(isWaiting() && numFDs ==1)
-                            exit(2);
                     } else if(!isWaiting()) {
                         if(strncmp(buf, "DONE:", 5)==0) {
                             DEBUG("DEBUG2: '%s' (%ld)\n",  buf+5, strlen(buf));
@@ -193,5 +191,8 @@ int main(int args, const char* argv[]) {
                 }
             }
         }
+
+        if(!isWaiting() && numFDs ==1)
+            exit(0);
     }
 }
