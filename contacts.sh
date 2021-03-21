@@ -9,7 +9,7 @@ case "$1" in
         jq -r "to_entries[]|select (.value.number | contains(\"$2\")) | .key" $CONTACTS_FILE
         ;;
     get-number)
-        number=$(jq -er ".$2.number" $CONTACTS_FILE || echo $2 | sed -E "s/[^0-9]+//g")
-        [ -z $number ]
+        number=$( (jq -er ".$2.number" $CONTACTS_FILE || echo $2) | sed -E "s/[^0-9]+//g")
+        [ -n "$number" ]
         echo $number
 esac
