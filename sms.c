@@ -54,7 +54,7 @@ void decodeSeptWithPadding(const char*str, int len, int padding, char* buffer) {
     int n=0;
     if(padding) {
         unsigned char rawByte = readByte(&str);
-        buffer[n++] = rawByte >> padding;
+        buffer[n++] = rawByte >> (7-padding);
     }
     for(int c=0; c<numOctets && str[0];i++, c++) {
         DEBUG("%d our of %d numOctets\n", c, numOctets);
@@ -176,7 +176,7 @@ void decodeUCS2(const char*str, int len, char* buffer) {
     }
     buffer[len]=0;
 }
-void decodeUserMessage(const char**c, uint8_t dataLength, uint8_t type, char* buffer) {
+void decodeUserMessage(const char**c, uint8_t headerLen, uint8_t dataLength, uint8_t type, char* buffer) {
     GSMEncodingType  dateEncoding = GSM_7_BIT;
     GSMEncodingType  TYPES[]={GSM_7_BIT, GSM_8_BIT, GSM_UCS2 };
     if(type <= 127 || type >= 240)
@@ -184,7 +184,7 @@ void decodeUserMessage(const char**c, uint8_t dataLength, uint8_t type, char* bu
     DEBUG("Remainder: %s (%ld); Data len %d\n", *c, strlen(*c), dataLength);
     switch(dateEncoding ) {
         case GSM_7_BIT:
-            decodeSept(*c, dataLength, buffer);
+            decodeSeptWithPadding(*c, dataLength, headerLen % 7 , buffer);
             break;
         case GSM_8_BIT:
             for(int i=0;*c && i<102;i++){
@@ -211,21 +211,17 @@ int setenvInt(const char*name, int value) {
     return setenv(name, buffer, value);
 }
 
-char*writeConcatenatedSMS(char*ptr, int refNumber, int totalSize, int index,  int*messagesLeftAfterThis ){
-    int numParts = (totalSize -1) / MAX_CONCAT_SMS_LEN +1;
-    *messagesLeftAfterThis = numParts - index;
-
-    writeByte(6, &ptr); //total header len
+void writeConcatenatedSMS(char**ptr, int refNumber, int numParts, int index){
+    writeByte(6, ptr); //total header len
     //writeByte(*messagesLeftAfterThis?MAX_SMS_LEN:UDH_CONCAT_SMS_HEADER_LEN + totalSize %MAX_CONCAT_SMS_LEN,  &ptr);
     //writeByte(UDH_CONCAT_SMS_HEADER_LEN, &ptr);
-    writeByte(CONCAT_SMS_16_BIT_REF_NUMBER, &ptr);
-    writeByte(4, &ptr);
-    writeByte(0, &ptr); // leading bits of ref number used mainly to avoid having to force 7-bit alignment
-    writeByte(refNumber, &ptr);
-    writeByte(numParts, &ptr);
-    writeByte(index, &ptr);
+    writeByte(CONCAT_SMS_16_BIT_REF_NUMBER, ptr);
+    writeByte(4, ptr);
+    writeByte(0, ptr); // leading bits of ref number used mainly to avoid having to force 7-bit alignment
+    writeByte(refNumber, ptr);
+    writeByte(numParts, ptr);
+    writeByte(index, ptr);
     DEBUG("Total parts %d %d\n", numParts, index );
-    return ptr;
 }
 
 void readConcatenatedSMS(const char**c, bool large){
@@ -259,12 +255,14 @@ int readUserHeader(const char**c){
 void decodeUserHeaderAndMessage(const char**c, bool userDataHeaderPresent,char type){
 
     uint8_t dataLength=readByte(c);
+    uint8_t headerLen = 0;
     DEBUG("User data len %d\n", dataLength);
     char message[MAX_SMS_LEN] = {0};
     if(userDataHeaderPresent) {
-        dataLength -= readUserHeader(c);
+        headerLen = readUserHeader(c);
+        dataLength -= headerLen;
     }
-    decodeUserMessage(c,dataLength, type, message);
+    decodeUserMessage(c, headerLen, dataLength, type, message);
     printf("%s", message);
 }
 
@@ -366,7 +364,7 @@ void encodeSMSMessage(const char*number, const char*msg, int type) {
     char buffer[MAX_TOTAL_SMS_LEN ] = {0};
     const int realMessageLen = strlen(msg);
     DEBUG("Message len: %d\n", realMessageLen);
-    bool splitMessage = realMessageLen > MAX_SMS_LEN;
+    bool splitMessage = realMessageLen > getMaxMessageSizePerType(type);
     char *ptr=buffer;
     writeByte(0x00, &ptr); // SMSC info
 
@@ -391,16 +389,22 @@ void encodeSMSMessage(const char*number, const char*msg, int type) {
     writeByte(type, &ptr); // Data coding scheme
     if(splitMessage) {
         DEBUG("Using concatenated sms messages; current buffer: \n%s\n", buffer);
-        char refNumber=rand()%255;
+        char refNumber=rand()*256;
         int i=0;
         int remainder;
-        do{
-            DEBUG("Message len: %d %d\n", realMessageLen, type);
-            char*userMessageStart= writeConcatenatedSMS(ptr,refNumber, realMessageLen, i+1, &remainder);
-            encodeUserMessage(userMessageStart, msg + i*MAX_CONCAT_SMS_LEN ,MAX_CONCAT_SMS_LEN , type);
+
+        int maxConcatLen = getMaxMessageSizePerType(type) - 8;
+        int numParts = (realMessageLen -1) / maxConcatLen + 1;
+
+        for(int i = 0; i < numParts ; i++) {
+            char*userMessageStart = ptr;
+            DEBUG("Message len: %d %d %d %d\n", realMessageLen, type, i, numParts);
+            DEBUG("%d %d\n",i==numParts-1, strlen(msg + i*MAX_CONCAT_SMS_LEN));
+            writeByte(i==numParts-1?strlen(msg + i*maxConcatLen): getMaxMessageSizePerType(type), &userMessageStart);
+            writeConcatenatedSMS(&userMessageStart,refNumber, numParts , i+1);
+            encodeUserMessage(userMessageStart, msg + i*maxConcatLen, maxConcatLen, type);
             writeMessage(buffer);
-            i++;
-        }while(remainder);
+        }
     } else{
         DEBUG("Using regular sms messages; current buffer: %ld\n%s \n",strlen(buffer), buffer);
         writeByte(strlen(msg), &ptr);
