@@ -1,4 +1,3 @@
-#!/bin/tcc -run
 #include <poll.h>
 #include <signal.h>
 #include <stdio.h>
