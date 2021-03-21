@@ -41,6 +41,7 @@ Response responses[] = {
 
 const char* onStartCmds[] = {
     MSG_ENDING_STR, // end any existing message prompt
+    "AT+CLIP=1", // turn on caller id
     "AT+CMGL=4", // dump all stored messages
 };
 #endif
