@@ -95,7 +95,7 @@ void processResponse(char* response) {
 }
 
 int readLine(int fd, char*buffer) {
-    int len = 255;
+    int len = 512;
     int i;
     for(i=0;i<len;i++){
         int ret = read(fd, buffer+i, 1);
