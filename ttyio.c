@@ -113,6 +113,9 @@ int readLine(int fd, char*buffer) {
     return i;
 }
 void onStart(int ttyFD) {
+    // end any existing message prompt
+    writeData(MSG_ENDING_STR);
+    setWaiting(0);
     char buf[4096]={0};
     struct pollfd fds[] = {{ttyFD, POLLIN}};
     for(int i = 0; i < LEN(onStartCmds); i++) {
