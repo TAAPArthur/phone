@@ -2,9 +2,9 @@
 
 SMS_MESSAGE_DIR=${SMS_MESSAGE_DIR:-~/SMS}
 sms -d | {
-    read -r _ date time tz
+    read -r date time tz
     timestamp="$date $time $tz"
-    read -r _ number
+    read -r number
     echo "Timestamp $timestamp Number: $number"
     [ -n "$number" ]
     msg="$(cat -)"
