@@ -12,9 +12,12 @@
 #ifndef NDEBUG
 #define DEBUG(X...) dprintf(2, X)
 #endif
+
+#define OUTPUT(X...) dprintf(1, X)
 int ttyFD;
 int status = SUCCESS;
 int waiting = 0;
+char lastLabel[255];
 int isWaiting() {
     return waiting;
 }
@@ -27,6 +30,27 @@ void setStatus(int s) {
     status = s;
     readingSMS = 0;
 }
+void signalLastProcess(int error) {
+    if(lastLabel[0]) {
+        OUTPUT("%s TERM %d\n", lastLabel, error);
+        lastLabel[0] = 0;
+    }
+}
+void echoResponse(const char* response) {
+    if(lastLabel[0]) {
+        OUTPUT("%s MSG %s\n", lastLabel, response);
+    }
+}
+
+void markSuccess(){
+    signalLastProcess(0);
+    setStatus(SUCCESS);
+}
+void markError(){
+    signalLastProcess(1);
+    setStatus(ERROR);
+}
+void clearWaiting(){setStatus(IN_PROGRESS);}
 void writeData(const char* s) {
     write(ttyFD, s, strlen(s));
     setWaiting(1);
@@ -76,7 +100,7 @@ void readSMS(const char*s) {
     }
 }
 
-void processResponse(char* response) {
+void processResponse(const char* response) {
     for(int i=0;i<LEN(responses);i++) {
         if(memcmp(responses[i].response, response, strlen(responses[i].response)) == 0) {
             if(readingSMS)
@@ -135,7 +159,28 @@ void onStart(int ttyFD) {
         }
     }
 }
-int main(int args, const char* argv[]) {
+static void processMetadataHelper(char* buffer){
+    int ret;
+    if(strncmp("MSG_TERM", buffer, 8) == 0) {
+        buffer[strlen(buffer) + 1] = 0;
+        buffer[strlen(buffer)] = MSG_ENDING;
+    } else {
+        sscanf(buffer, "LABEL=%255s", &lastLabel);
+    }
+}
+char* processMetadata(char* buffer){
+    if(buffer[0]=='#') {
+        buffer++;
+        if(buffer[0] == '#')
+            return buffer;
+        processMetadataHelper(buffer);
+        buffer = strstr(buffer, " ");
+        if(buffer)
+            buffer++;
+    }
+    return buffer;
+}
+int __attribute__((weak)) main(int argc, char * argv[]) {
 
     signal(SIGPIPE, SIG_IGN);
     ttyFD = open(argv[1]?argv[1]:device, O_RDWR|O_NONBLOCK);
@@ -156,23 +201,18 @@ int main(int args, const char* argv[]) {
                     sleep(1);
                     break;
                 }
-                int chars = readLine(fds[i].fd, buf);
-                if (chars) {
+                readLine(fds[i].fd, buf);
+                const char* data = processMetadata(buf);
+                if (data && data[0]) {
                     if(ttyFD == fds[i].fd) {
-                        DEBUG("'%s' (%ld)\n",  buf, strlen(buf));
-                        processResponse(buf);
+                        DEBUG("RESPONSE: '%s' (%ld)\n",  data, strlen(data));
+                        echoResponse(data);
+                        processResponse(data);
                     } else if(!isWaiting()) {
-                        if(strncmp(buf, "DONE:", 5)==0) {
-                            DEBUG("DEBUG2: '%s' (%ld)\n",  buf+5, strlen(buf));
-                            buf[strlen(buf)] = MSG_ENDING;
-                            writeData(buf+5);
-                        }
-                        else {
-                            DEBUG("DEBUG: '%s' (%ld) %d\n",  buf, strlen(buf), fds[i].revents);
-                            writeData(buf);
-                            writeData(LN_ENDING);
-                            setWaiting(1);
-                        }
+                        DEBUG("INPUT   : '%s' (%ld)\n",  data, strlen(data));
+                        writeData(data);
+                        writeData(LN_ENDING);
+                        setWaiting(1);
                     }
                 }
                 break;

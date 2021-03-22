@@ -19,9 +19,9 @@ void startReadingSMS();
 void receiveSMSNotification(const char*s);
 void readSMS(const char*s);
 
-static inline void markSuccess(){setStatus(SUCCESS);}
-static inline void markError(){setStatus(ERROR);}
-static inline void clearWaiting(){setStatus(IN_PROGRESS);}
+void markSuccess();
+void markError();
+void clearWaiting();
 
 typedef struct {
     const char* response;
