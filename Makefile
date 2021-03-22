@@ -15,5 +15,12 @@ sms: sms.c
 ttyio: ttyio.c
 	$(CC) -o $@ $^
 
+sms-test: sms.c tests/sms_unit.c
+	$(CC) $(CFLAGS) $^ -o $@ $(LDFLAGS) -lscutest
+
+test: sms-test *.sh all
+	./sms-test
+	tests/test.sh
+
 clean:
-	rm -f *.o ttyio sms
+	rm -f *.o ttyio sms sms-test

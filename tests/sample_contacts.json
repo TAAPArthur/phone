@@ -1,0 +1,19 @@
+{
+  "Tes": {
+    "number": "2345678901"
+  },
+  "Test": {
+    "email": "testEmail",
+    "group": [
+      "TestGroup"
+    ],
+    "number": "(123) 456-7890"
+  },
+  "Test2": {
+    "email": "test2Email",
+    "group": [
+      "Test2Group"
+    ],
+    "number": "2345678901"
+  }
+}
