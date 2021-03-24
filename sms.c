@@ -57,7 +57,6 @@ void decodeSeptWithPadding(const char*str, int len, int padding, char* buffer) {
         buffer[n++] = rawByte >> (7-padding);
     }
     for(int c=0; c<numOctets && str[0];i++, c++) {
-        DEBUG("%d our of %d numOctets\n", c, numOctets);
         assert(str[0]);
         if(i%8 == 7 && i) {
             buffer[n++] = carry;
@@ -101,8 +100,6 @@ int encodeSeptWithPadding(const char*str, int len, int padding, char* buffer) {
         n+=2;
         mask = mask << 1;
     }
-    DEBUG("N: %d len:%d\n", n, len);
-    DEBUG("%ld %ld\n", strlen(str), strlen(buffer));
     buffer[n]=0;
     return strlen(buffer);
 }
@@ -221,7 +218,6 @@ void writeConcatenatedSMS(char**ptr, int refNumber, int numParts, int index){
     writeByte(refNumber, ptr);
     writeByte(numParts, ptr);
     writeByte(index, ptr);
-    DEBUG("Total parts %d %d\n", numParts, index );
 }
 
 void readConcatenatedSMS(const char**c, bool large){
@@ -238,8 +234,6 @@ int readUserHeader(const char**c){
     int headerLen = readByte(c);// header len
     int infoElementIdentifier = readByte(c);
     int lengthOfRestOfHeader = readByte(c);
-    DEBUG("IDenfitier %d %s\n", infoElementIdentifier, *c);
-    DEBUG("%d Len of rest of header %d \n",headerLen , lengthOfRestOfHeader );
     switch(infoElementIdentifier) {
         case CONCAT_SMS_8_BIT_REF_NUMBER:
         case CONCAT_SMS_16_BIT_REF_NUMBER:
@@ -331,7 +325,6 @@ void decodeSMSMessage(const char*c) {
 }
 
 void encodeUserMessage(char*c, const char*msg, int msgLen, GSMEncodingType type) {
-    DEBUG("%d\n", type);
     switch(type) {
         case GSM_7_BIT:
             encodeSept(msg, msgLen, c);
