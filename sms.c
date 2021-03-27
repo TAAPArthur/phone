@@ -208,14 +208,15 @@ int setenvInt(const char*name, int value) {
     return setenv(name, buffer, value);
 }
 
-void writeConcatenatedSMS(char**ptr, int refNumber, int numParts, int index){
+void writeConcatenatedSMS(char**ptr, uint8_t refNumber, uint8_t numParts, uint8_t index){
+    assert(index && index <= numParts);
     writeByte(UDH_CONCAT_SMS_16_HEADER_LEN - 1, ptr); // total header len not counting this field
     //writeByte(*messagesLeftAfterThis?MAX_SMS_LEN:UDH_CONCAT_SMS_HEADER_LEN + totalSize %MAX_CONCAT_SMS_LEN,  &ptr);
     //writeByte(UDH_CONCAT_SMS_HEADER_LEN, &ptr);
     writeByte(CONCAT_SMS_16_BIT_REF_NUMBER, ptr);
     writeByte(UDH_CONCAT_SMS_16_HEADER_LEN - 3, ptr); // total header len not counting the first 2 fields
-    writeByte(0, ptr); // leading bits of ref number used mainly to avoid having to force 7-bit alignment
-    writeByte(refNumber, ptr);
+    writeByte(((char*)&refNumber)[1], ptr); // leading bits of ref number used mainly to avoid having to force 7-bit alignment
+    writeByte(((char*)&refNumber)[0], ptr);
     writeByte(numParts, ptr);
     writeByte(index, ptr);
 }
@@ -382,7 +383,7 @@ void encodeSMSMessage(const char*number, const char*msg, int type) {
     writeByte(type, &ptr); // Data coding scheme
     if(splitMessage) {
         DEBUG("Using concatenated sms messages; current buffer: \n%s\n", buffer);
-        char refNumber=rand()*256;
+        short refNumber=getpid()%256;
         int i=0;
         int remainder;
 
