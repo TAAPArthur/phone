@@ -209,11 +209,11 @@ int setenvInt(const char*name, int value) {
 }
 
 void writeConcatenatedSMS(char**ptr, int refNumber, int numParts, int index){
-    writeByte(6, ptr); //total header len
+    writeByte(UDH_CONCAT_SMS_16_HEADER_LEN - 1, ptr); // total header len not counting this field
     //writeByte(*messagesLeftAfterThis?MAX_SMS_LEN:UDH_CONCAT_SMS_HEADER_LEN + totalSize %MAX_CONCAT_SMS_LEN,  &ptr);
     //writeByte(UDH_CONCAT_SMS_HEADER_LEN, &ptr);
     writeByte(CONCAT_SMS_16_BIT_REF_NUMBER, ptr);
-    writeByte(4, ptr);
+    writeByte(UDH_CONCAT_SMS_16_HEADER_LEN - 3, ptr); // total header len not counting the first 2 fields
     writeByte(0, ptr); // leading bits of ref number used mainly to avoid having to force 7-bit alignment
     writeByte(refNumber, ptr);
     writeByte(numParts, ptr);
@@ -235,7 +235,7 @@ int readUserHeader(const char**c){
     int infoElementIdentifier = readByte(c);
     int lengthOfRestOfHeader = readByte(c);
     switch(infoElementIdentifier) {
-        case CONCAT_SMS_8_BIT_REF_NUMBER:
+        case CONCAT_SMS_08_BIT_REF_NUMBER:
         case CONCAT_SMS_16_BIT_REF_NUMBER:
             assert(headerLen == lengthOfRestOfHeader +2);
             readConcatenatedSMS(c, CONCAT_SMS_16_BIT_REF_NUMBER == infoElementIdentifier);
@@ -392,7 +392,6 @@ void encodeSMSMessage(const char*number, const char*msg, int type) {
         for(int i = 0; i < numParts ; i++) {
             char*userMessageStart = ptr;
             DEBUG("Message len: %d %d %d %d\n", realMessageLen, type, i, numParts);
-            DEBUG("%d %d\n",i==numParts-1, strlen(msg + i*MAX_CONCAT_SMS_LEN));
             writeByte(i==numParts-1?strlen(msg + i*maxConcatLen): getMaxMessageSizePerType(type), &userMessageStart);
             writeConcatenatedSMS(&userMessageStart,refNumber, numParts , i+1);
             encodeUserMessage(userMessageStart, msg + i*maxConcatLen, maxConcatLen, type);
