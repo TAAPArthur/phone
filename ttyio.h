@@ -12,8 +12,6 @@ const char MSG_ENDING_STR[] = {MSG_ENDING};
 const char LN_ENDING[] ="\r\n";
 const char * device = "/dev/ttyUSB2";
 
-const char* SMS_READ_CMD = "/bin/save-sms";
-
 void setStatus(int s);
 void startReadingSMS();
 void receiveSMSNotification(const char*s);
@@ -23,10 +21,14 @@ void markSuccess();
 void markError();
 void clearWaiting();
 
+#define MULTI_LINE_FLAG 1
 typedef struct {
     const char* response;
     void(*f)(const char*s);
+    const char* cmd;
+    int flags;
 } Response;
+
 
 Response responses[] = {
     {"OK", markSuccess},
@@ -34,9 +36,10 @@ Response responses[] = {
     {"+CME ERROR: ", markError},
     {"ERROR", markError},
     {"RING"},
-    {"+CMGL: ", startReadingSMS},
+    {"NO CARRIER", .cmd = "/bin/call -e"},
     {"+CMTI: ", receiveSMSNotification},
-    {"+CMGR: ", readSMS}
+    {"+CMGL: ", readSMS, .cmd = "/bin/save-sms", .flags = MULTI_LINE_FLAG},
+    {"+CMGR: ", readSMS, .cmd = "/bin/save-sms", .flags = MULTI_LINE_FLAG},
 };
 
 

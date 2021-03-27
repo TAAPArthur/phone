@@ -18,6 +18,7 @@ int ttyFD;
 int status = SUCCESS;
 int waiting = 0;
 char lastLabel[255];
+static Response* lastResponse;
 int isWaiting() {
     return waiting;
 }
@@ -26,6 +27,7 @@ void setWaiting(int i) {
     waiting = i;
 }
 void setStatus(int s) {
+    lastResponse = NULL;
     setWaiting(0);
     status = s;
     readingSMS = 0;
@@ -56,26 +58,11 @@ void writeData(const char* s) {
     setWaiting(1);
 }
 
-static int subCmdFD[2];
-
-void startReadingSMS() {
-    readingSMS = 1;
-    if(pipe(subCmdFD) ==-1){
-        perror("pipe");
-    }
-
+void spawn(const char* cmd, const char* arg) {
+    DEBUG("Executing command %s with arg '%s'\n", cmd, arg);
     if(!fork()) {
-        dup2(subCmdFD[0], STDIN_FILENO);
-        close(subCmdFD[1]);
-        close(subCmdFD[0]);
-        execl(SMS_READ_CMD, SMS_READ_CMD);
+        execl(cmd, cmd, arg);
     }
-    close(subCmdFD[0]);
-}
-
-void commitSMSRead() {
-    readingSMS = 0;
-    close(subCmdFD[1]);
     wait(NULL);
 }
 
@@ -88,33 +75,28 @@ void receiveSMSNotification(const char*s) {
     char buffer[16];
     sprintf(buffer,"AT+CMGR=%s%s", index, LN_ENDING);
     writeData(buffer);
-    startReadingSMS();
 }
 void readSMS(const char*s) {
-    if(readingSMS) {
-        int len =0 ;
-        int ret= sscanf(s, "%*s %*d,,%d", &len);
-        if(ret==0)
-            ret = sscanf(s, "%*s %*d,%*d,%d", &len);
-        DEBUG("%d, %d\n",ret, len);
-    }
+    char index[4];
+    int ret= sscanf(s, "%*s %d,", &index);
+    setenv(SMS_INDEX_ENV_NAME, index, 1);
+    setWaiting(1);
 }
 
 void processResponse(const char* response) {
     for(int i=0;i<LEN(responses);i++) {
         if(memcmp(responses[i].response, response, strlen(responses[i].response)) == 0) {
-            if(readingSMS)
-                commitSMSRead();
             if(responses[i].f) {
                 responses[i].f(response);
+                return;
+            } else if(responses[i].cmd) {
+                spawn(responses[i].cmd, response);
                 return;
             }
         }
     }
-    if(readingSMS) {
-       if(-1 == write(subCmdFD[1], response, strlen(response))){
-           perror("Write");
-       }
+    if(lastResponse && lastResponse->cmd && (lastResponse->flags & MULTI_LINE_FLAG)) {
+        spawn(lastResponse->cmd, response);
     }
 }
 
