@@ -444,20 +444,30 @@ int __attribute__((weak)) main(int argc, char * argv[]) {
         }
     }
     char buffer[4096]={0};
-    int ret = read(STDIN_FILENO, buffer, sizeof(buffer)-1);
-    if(ret ==-1) {
-        perror("failed to read");
-    }
-
-    if(decode)
-        decodeSMSMessage(buffer);
-    else {
-        const char* number = argv[optind];
+    const char* msg = buffer;
+    const char* number;
+    if(!decode) {
+        number = argv[optind];
         if(!number) {
             usage(argv[0]);
             exit(1);
         }
-        encodeSMSMessage(number, buffer, alphabet);
+        optind++;
+    }
+    if(argv[optind]) {
+        msg = argv[optind];
+    }
+    else {
+        int ret = read(STDIN_FILENO, buffer, sizeof(buffer)-1);
+        if(ret ==-1) {
+            perror("failed to read");
+        }
+    }
+
+    if(decode)
+        decodeSMSMessage(msg);
+    else {
+        encodeSMSMessage(number, msg, alphabet);
     }
     exit(0);
 }

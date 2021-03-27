@@ -1,12 +1,12 @@
 #!/bin/sh -e
 
-SMS_MESSAGE_DIR=${SMS_MESSAGE_DIR:-~/SMS}
-sms -d | {
+sms -d $1 | {
     read -r date time tz
     timestamp="$date $time $tz"
     read -r number
     echo "Timestamp $timestamp Number: $number"
     [ -n "$number" ]
+    SMS_MESSAGE_DIR=${PHONE_DIR:-~/Phone}/$number/SMS
     msg="$(cat -)"
     echo "Saving $timestamp $number $msg"
     SMS_DIR=$SMS_MESSAGE_DIR/$number
