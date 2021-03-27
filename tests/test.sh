@@ -19,7 +19,7 @@ EOF
             read -r expected <&3 || expected=""
             if [ "$output" != "$expected" ]; then
                 echo "failed on line $i"
-                echo "'$output'" vs "'$expected'"
+                printf "'%s'\nvs\n'%s';\n" "$output" "$expected"
                 failTest $script
             fi
         done
