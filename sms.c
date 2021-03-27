@@ -12,6 +12,7 @@
 #include <stdint.h>
 
 char LN_TERMINATOR = '\n';
+short refNumber;
 
 void die(const char*msg){
     perror(msg);
@@ -208,7 +209,7 @@ int setenvInt(const char*name, int value) {
     return setenv(name, buffer, value);
 }
 
-void writeConcatenatedSMS(char**ptr, uint8_t refNumber, uint8_t numParts, uint8_t index){
+void writeConcatenatedSMS(char**ptr, uint16_t refNumber, uint16_t numParts, uint16_t index){
     assert(index && index <= numParts);
     writeByte(UDH_CONCAT_SMS_16_HEADER_LEN - 1, ptr); // total header len not counting this field
     //writeByte(*messagesLeftAfterThis?MAX_SMS_LEN:UDH_CONCAT_SMS_HEADER_LEN + totalSize %MAX_CONCAT_SMS_LEN,  &ptr);
@@ -383,7 +384,6 @@ void encodeSMSMessage(const char*number, const char*msg, int type) {
     writeByte(type, &ptr); // Data coding scheme
     if(splitMessage) {
         DEBUG("Using concatenated sms messages; current buffer: \n%s\n", buffer);
-        short refNumber=getpid()%256;
         int i=0;
         int remainder;
 
@@ -413,8 +413,12 @@ int __attribute__((weak)) main(int argc, char * argv[]) {
     int alphabet = GSM_7_BIT;
     int decode = 0;
     int opt;
-    while((opt=getopt(argc, argv, "f:l:zhd78"))!=-1) {
+    refNumber = getpid();
+    while((opt=getopt(argc, argv, "f:l:r:zhd78"))!=-1) {
         switch(opt) {
+            case 'r':
+               refNumber = atoi(optarg);
+               break;
             case 'l':
                 LN_TERMINATOR = optarg[0];
                break;

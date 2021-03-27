@@ -1,6 +1,6 @@
 #!/bin/sh
 
-printf %s "Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum." | ./sms 00000000000
+printf %s "Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum." | ./sms -r 0 00000000000
 # AT+CMGS=153
 # 0065000b910000000000F00000a006080400000301ccb7bcdc06a5e1f37a1b447eb3df72d03c4d0785db653a0b347ebbe7e531bd4cafcb4161721a9e9ea7c769f7195466a7e92cd0bc4c0691dfa072ba3e6fbfc9207ab90d7fcb4169f7384d4e93eb6e3aa84e07b1c3e2b7bc0c2ad341e437fb2d2f83dae1b33b0c0ab3d3f17ad855a583caee741b142683da6977ba0db297dde9709b058ad7d3
 # AT+CMGS=153
