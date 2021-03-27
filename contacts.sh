@@ -1,9 +1,18 @@
 #!/bin/sh -e
 CONTACTS_FILE=${CONTACTS_FILE:-$HOME/contacts.json}
+PHONE_DIR=${PHONE_DIR:-~/Phone}
 
 case "$1" in
-    list)
+    list-all)
         jq -r "keys[]" $CONTACTS_FILE
+        ;;
+    list)
+        jq -r "to_entries[]|select (.value.group | index(\"FriendLike\")) | .key" $CONTACTS_FILE
+        ;;
+    list-sorted)
+        ;;
+    list-recents)
+        ls -pt $PHONE_DIR/**/.lastaccess | head | xargs -I{} $0 get-name {}
         ;;
     get-name)
         number=$(echo $2| sed -E "s/[^0-9]+//g")

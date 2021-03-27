@@ -1,5 +1,5 @@
 #!/bin/sh
-./contacts.sh list
+./contacts.sh list-all
 # Tes
 # Test
 # Test2
