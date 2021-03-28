@@ -71,20 +71,23 @@ void spawn(const char* cmd, const char* arg) {
 void receiveSMSNotification(const char*s) {
     char messageArea[3]={0};
     int index;
-    int ret = sscanf(s, "%*s \"%2s\",%d", messageArea, &index);
-    char buffer[16];
-    sprintf(buffer, "%d", index);
-    setenv(SMS_INDEX_ENV_NAME, buffer, 1);
+    int ret = sscanf(s, "%*s \"%3s\",%d", messageArea, &index);
     DEBUG("Received SMS message ME:'%s' index: %d\n", messageArea, index);
+    char buffer[16];
     sprintf(buffer,"AT+CMGR=%d%s", index, LN_ENDING);
     writeData(buffer);
 }
+
 void readSMS(const char*s) {
     int index;
-    char buffer[4];
-    int ret= sscanf(s, "%*s %d,", &index);
-    sprintf(buffer, "%d", index);
-    setenv(SMS_INDEX_ENV_NAME, buffer, 1);
+    int ret = sscanf(s, "%*s %d,", &index);
+    if(ret >=0) {
+        char buffer[4];
+        sprintf(buffer, "%d", index);
+        setenv(SMS_INDEX_ENV_NAME, buffer, 1);
+    }
+    else
+        unsetenv(SMS_INDEX_ENV_NAME);
     setWaiting(1);
 }
 
