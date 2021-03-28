@@ -8,6 +8,7 @@ install: sms ttyio
 	install -D -m 0755 "contacts.sh" "$(DESTDIR)/usr/bin/contacts"
 	install -D -m 0755 "phonemenu.sh" "$(DESTDIR)/usr/bin/phonemenu"
 	install -D -m 0755 "pp-modem.sh" "$(DESTDIR)/usr/bin/pp-modem"
+	install -D -m 0755 "call.sh" "$(DESTDIR)/usr/bin/call"
 	install -D -m 0755 "wait-for-phone-response.sh" "$(DESTDIR)/usr/bin/wait-for-phone-response"
 	install -m 0755 -Dt "$(DESTDIR)/usr/bin/" "sms"
 	install -m 0755 -Dt "$(DESTDIR)/usr/bin/" "ttyio"
