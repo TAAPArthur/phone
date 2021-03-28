@@ -14,4 +14,7 @@ case $1 in
     off)
         changePower 0
     ;;
+    "")
+        cat /sys/class/modem-power/modem-power/device/powered
+    ;;
 esac
