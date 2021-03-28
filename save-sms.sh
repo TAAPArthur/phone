@@ -12,8 +12,8 @@ sms -d "$1" | {
     if [ -n "$SMS_INDEX" ]; then
         INDEX_DIR="$PHONE_DIR/.index"
         mkdir -p "$INDEX_DIR"
-        INDEX_FILE="$INDEX_DIR/$INDEX"
-        if [ -f "$INDEX_FILE" ] && [ "$(cat "$INDEX_FILE")" = "$timestamp" ]; then
+        SMS_INDEX_FILE="$INDEX_DIR/$SMS_INDEX"
+        if [ -f "$SMS_INDEX_FILE" ] && [ "$(cat "$SMS_INDEX_FILE")" = "$timestamp" ]; then
             exit 0
         fi
     fi
@@ -21,6 +21,6 @@ sms -d "$1" | {
     mkdir -p "$SMS_DATE_DIR"
     printf "%s\t%s\t%s\n\0" "$(date -Iseconds)" "$timestamp" "$msg" >> "$SMS_DATE_DIR/sms.txt"
     if [ -n "$SMS_INDEX" ]; then
-        printf "%s" "$timestamp" > "$INDEX_FILE"
+        printf "%s" "$timestamp" > "$SMS_INDEX_FILE"
     fi
 }
