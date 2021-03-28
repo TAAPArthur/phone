@@ -54,7 +54,10 @@ void markError(){
 }
 void clearWaiting(){setStatus(IN_PROGRESS);}
 void writeData(const char* s) {
-    write(ttyFD, s, strlen(s));
+    if(write(ttyFD, s, strlen(s)) == -1) {
+        perror("Failed to write data");
+        exit(1);
+    }
     setWaiting(1);
 }
 
@@ -126,6 +129,7 @@ int readLine(int fd, char*buffer) {
             break;
         }
     }
+    buffer[i]=0;
     return i;
 }
 void onStart(int ttyFD) {

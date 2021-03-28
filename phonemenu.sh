@@ -2,25 +2,27 @@
 
 quick_text() {
     action=$(dmenu) <<EOF
+Test
 Driving
 Here
 Will call you back later
 Help requested
 nm
 EOF
-    send-sms $name $action
+    send-sms "$1" "$action"
 }
 contacts_menu() {
 name=$(contacts list-recent | dmenu)
 action=$( dmenu) <<EOF
 call
 text
+cancel
 hangup
 answer
 EOF
 case "$action" in
     call)
-        call $name
+        call "$name"
         ;;
     answer)
         call -a
@@ -28,8 +30,11 @@ case "$action" in
     hangup)
         call -h
         ;;
-    contact)
-        quick_text $name
+    text)
+        quick_text "$name"
+        ;;
+    *)
+        exit 0
         ;;
 esac
 }
