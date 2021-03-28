@@ -377,7 +377,7 @@ void encodeSMSMessage(const char*number, const char*msg, int type) {
 
     // destination address
     writeByte(strlen(number), &ptr); // address length
-    writeByte(0x91, &ptr); // typeof address
+    writeByte(0x81, &ptr); // typeof address
     ptr+=encodePhoneNumber(number, strlen(number), ptr);
 
     writeByte(0x00, &ptr); // tp-pid
