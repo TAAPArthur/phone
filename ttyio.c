@@ -154,7 +154,7 @@ static void processMetadataHelper(char* buffer){
         buffer[strlen(buffer) + 1] = 0;
         buffer[strlen(buffer)] = MSG_ENDING;
     } else {
-        sscanf(buffer, "LABEL=%255s", &lastLabel);
+        sscanf(buffer, "LABEL=%255s", lastLabel);
     }
 }
 char* processMetadata(char* buffer){
