@@ -61,14 +61,29 @@ void writeData(const char* s) {
     setWaiting(1);
 }
 
-void spawn(const char* cmd, const char* arg) {
+
+int spawn(const char* cmd, const char* arg) {
     DEBUG("Executing command %s with arg '%s'\n", cmd, arg);
-    if(!fork()) {
+    int pid = fork();
+    if(!pid) {
         int ret = execlp(cmd, cmd, arg, NULL);
         perror("Failed exec");
         exit(1);
     }
-    wait(NULL);
+
+    int status = 0;
+    waitpid(pid, &status, 0);
+    int exitCode = WIFEXITED(status) ? WEXITSTATUS(status) : WIFSIGNALED(status) ? WTERMSIG(status) : -1;
+    return exitCode;
+}
+
+int spawnResponse(Response* response, const char* arg) {
+    int exitCode = spawn(response->cmd, arg);
+    if(exitCode == 0) {
+        if (response->successFunction)
+            response->successFunction(arg);
+    }
+    return exitCode;
 }
 
 void receiveSMSNotification(const char*s) {
@@ -81,6 +96,14 @@ void receiveSMSNotification(const char*s) {
     writeData(buffer);
 }
 
+
+void deleteSMS() {
+    char buffer[16];
+    if(getenv(SMS_INDEX_ENV_NAME)) {
+        sprintf(buffer,"AT+CMGD=%s%s", getenv(SMS_INDEX_ENV_NAME), LN_ENDING);
+        writeData(buffer);
+    }
+}
 void readSMS(const char*s) {
     int index;
     int ret = sscanf(s, "%*s %d,", &index);
@@ -103,13 +126,13 @@ void processResponse(const char* response) {
                 responses[i].f(response);
                 return;
             } else if(responses[i].cmd) {
-                spawn(responses[i].cmd, response);
+                spawnResponse(&responses[i], response);
                 return;
             }
         }
     }
     if(lastResponse && lastResponse->cmd && (lastResponse->flags & MULTI_LINE_FLAG)) {
-        spawn(lastResponse->cmd, response);
+        spawnResponse(lastResponse, response);
     }
 }
 

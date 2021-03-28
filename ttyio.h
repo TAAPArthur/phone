@@ -16,6 +16,7 @@ void setStatus(int s);
 void startReadingSMS();
 void receiveSMSNotification(const char*s);
 void readSMS(const char*s);
+void deleteSMS();
 
 void markSuccess();
 void markError();
@@ -26,6 +27,7 @@ typedef struct {
     const char* response;
     void(*f)(const char*s);
     const char* cmd;
+    void(*successFunction)(const char*s);
     int flags;
 } Response;
 
@@ -37,8 +39,8 @@ Response responses[] = {
     {"RING"},
     {"NO CARRIER", .cmd = "call -e"},
     {"+CMTI: ", receiveSMSNotification},
-    {"+CMGL: ", readSMS, .cmd = "save-sms", .flags = MULTI_LINE_FLAG},
-    {"+CMGR: ", readSMS, .cmd = "save-sms", .flags = MULTI_LINE_FLAG},
+    {"+CMGL: ", readSMS, .cmd = "save-sms", .successFunction = deleteSMS, .flags = MULTI_LINE_FLAG},
+    {"+CMGR: ", readSMS, .cmd = "save-sms", .successFunction = deleteSMS, .flags = MULTI_LINE_FLAG},
 };
 
 
