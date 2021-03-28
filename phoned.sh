@@ -1,2 +1,2 @@
 #!/bin/sh
-mqreceive phone | ttyio | mqbuse-send phone-response
+mqreceive phone | ttyio | mqbus-send phone-response
