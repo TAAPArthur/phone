@@ -61,7 +61,9 @@ void writeData(const char* s) {
 void spawn(const char* cmd, const char* arg) {
     DEBUG("Executing command %s with arg '%s'\n", cmd, arg);
     if(!fork()) {
-        execl(cmd, cmd, arg);
+        int ret = execlp(cmd, cmd, arg, NULL);
+        perror("Failed exec");
+        exit(1);
     }
     wait(NULL);
 }
@@ -86,6 +88,8 @@ void readSMS(const char*s) {
 void processResponse(const char* response) {
     for(int i=0;i<LEN(responses);i++) {
         if(memcmp(responses[i].response, response, strlen(responses[i].response)) == 0) {
+            lastResponse = responses + i;
+            DEBUG("Triggering response %d: %s\n", i, responses[i].response);
             if(responses[i].f) {
                 responses[i].f(response);
                 return;

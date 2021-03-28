@@ -29,17 +29,16 @@ typedef struct {
     int flags;
 } Response;
 
-
 Response responses[] = {
     {"OK", markSuccess},
     {">", clearWaiting},
     {"+CME ERROR: ", markError},
     {"ERROR", markError},
     {"RING"},
-    {"NO CARRIER", .cmd = "/bin/call -e"},
+    {"NO CARRIER", .cmd = "call -e"},
     {"+CMTI: ", receiveSMSNotification},
-    {"+CMGL: ", readSMS, .cmd = "/bin/save-sms", .flags = MULTI_LINE_FLAG},
-    {"+CMGR: ", readSMS, .cmd = "/bin/save-sms", .flags = MULTI_LINE_FLAG},
+    {"+CMGL: ", readSMS, .cmd = "save-sms", .flags = MULTI_LINE_FLAG},
+    {"+CMGR: ", readSMS, .cmd = "save-sms", .flags = MULTI_LINE_FLAG},
 };
 
 
