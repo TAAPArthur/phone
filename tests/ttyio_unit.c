@@ -6,6 +6,8 @@
 
 char* processMetadata(char*buffer);
 extern char lastLabel[];
+extern int ttyFD;
+void receiveSMSNotification(const char*s);
 SCUTEST(test_process_metadata) {
     char buffer[] = "#LABEL=123456 ATA";
     char*data=processMetadata(buffer);
@@ -17,6 +19,16 @@ SCUTEST(test_process_metadata_noop) {
     char buffer[] = "ATA";
     char*data=processMetadata(buffer);
     assert(strcmp(data, buffer) == 0);
+}
+
+SCUTEST(test_receive_sms) {
+    int fds[2];
+    pipe(fds);
+    ttyFD = fds[1];
+    receiveSMSNotification("+CMTI: \"ME\",10");
+    char buffer[16] ={0};
+    int ret = read(fds[0], buffer, sizeof(buffer));
+    assert(strcmp(buffer,"AT+CMGR=10\r\n")==0);
 }
 
 int main(int argc, char * argv[]) {

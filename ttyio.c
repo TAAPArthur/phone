@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <fcntl.h>
 #include <sys/wait.h>
+#include <assert.h>
 #include <string.h>
 #include "ttyio.h"
 #define LEN(A) (sizeof(A)/sizeof(A[0]))
@@ -89,8 +90,9 @@ int spawnResponse(Response* response, const char* arg) {
 void receiveSMSNotification(const char*s) {
     char messageArea[3]={0};
     int index;
-    int ret = sscanf(s, "%*s \"%3s\",%d", messageArea, &index);
+    int ret = sscanf(s, "%*s \"%2s\",%d", messageArea, &index);
     DEBUG("Received SMS message ME:'%s' index: %d\n", messageArea, index);
+    assert(ret==2);
     char buffer[16];
     sprintf(buffer,"AT+CMGR=%d%s", index, LN_ENDING);
     writeData(buffer);
