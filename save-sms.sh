@@ -19,7 +19,7 @@ sms -d "$1" | {
     fi
     SMS_DATE_DIR="$PHONE_DIR/$number/SMS/$(date -I)"
     mkdir -p "$SMS_DATE_DIR"
-    printf "%s\t%s\t%s\n\0" "$(date -Iseconds)" "$timestamp" "$msg" >> "$SMS_DATE_DIR/sms.txt"
+    printf "%s\t%s\t%s\0\n" "$(date -Iseconds)" "$timestamp" "$msg" >> "$SMS_DATE_DIR/sms.txt"
     if [ -n "$SMS_INDEX" ]; then
         printf "%s" "$timestamp" > "$SMS_INDEX_FILE"
     fi
