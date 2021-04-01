@@ -160,12 +160,12 @@ void onStart(int ttyFD) {
     // end any existing message prompt
     writeData(MSG_ENDING_STR);
     setWaiting(0);
-    char buf[4096]={0};
     struct pollfd fds[] = {{ttyFD, POLLIN}};
     for(int i = 0; i < LEN(onStartCmds); i++) {
         writeData(onStartCmds[i]);
         writeData(LN_ENDING);
         while(isWaiting()){
+            char buf[4096]={0};
             int ret = poll(fds, 1, -1);
             if(ret == -1) {
                 perror("Poll");
