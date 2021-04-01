@@ -17,7 +17,9 @@ ring() {
     fi
 }
 
-case $1 in
+action=$1
+shift
+case $action in
     end)
         log END
         rm /tmp/.ringing
@@ -37,7 +39,7 @@ case $1 in
         LOG_ACTION=ANSWER
         ;;
     -h)
-        if [ "$2" = "--all" ]; then
+        if [ "$1" = "--all" ]; then
             cmd="AT+CHUP" # hang up all calls
         else
             cmd="HUP" # hang up call
@@ -45,13 +47,15 @@ case $1 in
         LOG_ACTION=HANGUP
         ;;
     -t)
-        cmd="AT+VTS=$2" # dial tones
+        cmd="AT+VTS=$1" # dial tones
         LOG_ACTION=DIALTONE
-        LOG_PARAM=$2
+        LOG_PARAM=$1
         ;;
     -d|*)
-        number=$(contacts get-number "$1")
-        cmd="ATD$number$*"
+        name=$1
+        shift
+        number=$(contacts get-number "$name")
+        cmd="ATD$number$*;"
         LOG_ACTION=DIAL
         LOG_PARAM=$number
     ;;
