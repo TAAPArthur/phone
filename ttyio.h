@@ -33,7 +33,7 @@ typedef struct {
 
 Response responses[] = {
     {"OK", markSuccess},
-    {">", clearWaiting},
+    {">", clearWaiting, .cmd = "save-sms", .flags = MULTI_LINE_FLAG},
     {"+CME ERROR: ", markError},
     {"ERROR", markError},
     {"RING"},
@@ -47,6 +47,7 @@ Response responses[] = {
 const char* onStartCmds[] = {
     "AT+CLIP=1", // turn on caller id
     "AT+CMGL=4", // dump all stored messages
+    "ATE1", // echo input back
 };
 #endif
 

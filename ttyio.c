@@ -83,6 +83,7 @@ int spawnResponse(Response* response, const char* arg) {
         if (response->successFunction)
             response->successFunction(arg);
     }
+    unsetenv(SMS_INDEX_ENV_NAME);
     return exitCode;
 }
 
