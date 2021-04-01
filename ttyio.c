@@ -27,7 +27,6 @@ void setWaiting(int i) {
     waiting = i;
 }
 void setStatus(int s) {
-    lastResponse = NULL;
     setWaiting(0);
     status = s;
     readingSMS = 0;
@@ -135,6 +134,7 @@ void processResponse(const char* response) {
     if(lastResponse && lastResponse->cmd && (lastResponse->flags & MULTI_LINE_FLAG)) {
         spawnResponse(lastResponse, response);
     }
+    lastResponse = NULL;
 }
 
 int readLine(int fd, char*buffer) {
