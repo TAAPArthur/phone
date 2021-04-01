@@ -12,7 +12,7 @@ EOF
     send-sms "$1" "$action"
 }
 contacts_menu() {
-name=$(contacts list-recent | dmenu)
+name=$( (contacts list-recent | head -n 10; contacts list) | dmenu)
 action=$( dmenu) <<EOF
 call
 text
