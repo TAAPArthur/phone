@@ -1,15 +1,11 @@
 all: sms ttyio
 
-install: sms ttyio
+SCRIPTS := $(wildcard *.sh)
 
-	install -D -m 0755 "save-sms.sh" "$(DESTDIR)/usr/bin/save-sms"
-	install -D -m 0755 "send-sms.sh" "$(DESTDIR)/usr/bin/send-sms"
-	install -D -m 0755 "phoned.sh" "$(DESTDIR)/usr/bin/phoned"
-	install -D -m 0755 "contacts.sh" "$(DESTDIR)/usr/bin/contacts"
-	install -D -m 0755 "phonemenu.sh" "$(DESTDIR)/usr/bin/phonemenu"
-	install -D -m 0755 "pp-modem.sh" "$(DESTDIR)/usr/bin/pp-modem"
-	install -D -m 0755 "call.sh" "$(DESTDIR)/usr/bin/call"
-	install -D -m 0755 "wait-for-phone-response.sh" "$(DESTDIR)/usr/bin/wait-for-phone-response"
+install: sms ttyio
+	for bin in $(SCRIPTS:.sh=); do \
+		install -D -m 0755 "$$bin.sh" "$(DESTDIR)/usr/bin/$$bin" ;\
+	done
 	install -m 0755 -Dt "$(DESTDIR)/usr/bin/" "sms"
 	install -m 0755 -Dt "$(DESTDIR)/usr/bin/" "ttyio"
 
