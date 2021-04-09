@@ -62,11 +62,11 @@ void writeData(const char* s) {
 }
 
 
-int spawn(const char* cmd, const char* arg) {
-    DEBUG("Executing command %s with arg '%s'\n", cmd, arg);
+int spawn(const char* cmd) {
+    DEBUG("Executing command %s\n", cmd);
     int pid = fork();
     if(!pid) {
-        int ret = execlp(cmd, cmd, arg, NULL);
+        int ret = execlp(SHELL, SHELL, "-c", cmd, NULL);
         perror("Failed exec");
         exit(1);
     }
@@ -78,7 +78,16 @@ int spawn(const char* cmd, const char* arg) {
 }
 
 int spawnResponse(Response* response, const char* arg) {
-    int exitCode = spawn(response->cmd, arg);
+    char buffer[CMD_BUFFER];
+    const char*cmd = response->cmd;
+
+    if(response->flags & ADD_RESPONSE_FLAG) {
+        if(response->flags & STRIP_LABEL)
+            arg += strlen(response->response);
+        sprintf(buffer, response->cmd, arg);
+        cmd = buffer;
+    }
+    int exitCode = spawn(cmd);
     if(exitCode == 0) {
         if (response->successFunction)
             response->successFunction(arg);

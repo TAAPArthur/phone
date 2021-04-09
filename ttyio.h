@@ -12,6 +12,8 @@ const char MSG_ENDING_STR[] = {MSG_ENDING};
 const char LN_ENDING[] ="\r\n";
 const char * device = "/dev/ttyUSB2";
 
+#define SHELL "/bin/sh"
+
 void setStatus(int s);
 void startReadingSMS();
 void receiveSMSNotification(const char*s);
@@ -21,8 +23,11 @@ void deleteSMS();
 void markSuccess();
 void markError();
 void clearWaiting();
+#define CMD_BUFFER 255
 
 #define MULTI_LINE_FLAG 1
+#define STRIP_LABEL 2
+#define ADD_RESPONSE_FLAG 4
 typedef struct {
     const char* response;
     void(*f)(const char*s);
@@ -33,14 +38,15 @@ typedef struct {
 
 Response responses[] = {
     {"OK", markSuccess},
-    {">", clearWaiting, .cmd = "save-sms", .flags = MULTI_LINE_FLAG},
+    {">", clearWaiting, .cmd = "save-sms %s", .flags = MULTI_LINE_FLAG | ADD_RESPONSE_FLAG },
     {"+CME ERROR: ", markError},
     {"ERROR", markError},
     {"RING"},
-    {"NO CARRIER", .cmd = "call -e"},
+    {"+CLIP:", .cmd = "ringd -s %s", .flags = STRIP_LABEL | ADD_RESPONSE_FLAG},
+    {"NO CARRIER", .cmd = "call -e %s"},
     {"+CMTI: ", receiveSMSNotification},
-    {"+CMGL: ", readSMS, .cmd = "save-sms", .successFunction = deleteSMS, .flags = MULTI_LINE_FLAG},
-    {"+CMGR: ", readSMS, .cmd = "save-sms", .successFunction = deleteSMS, .flags = MULTI_LINE_FLAG},
+    {"+CMGL: ", readSMS, .cmd = "save-sms %s", .successFunction = deleteSMS, .flags = MULTI_LINE_FLAG | ADD_RESPONSE_FLAG },
+    {"+CMGR: ", readSMS, .cmd = "save-sms %s", .successFunction = deleteSMS, .flags = MULTI_LINE_FLAG | ADD_RESPONSE_FLAG },
 };
 
 

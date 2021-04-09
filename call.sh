@@ -6,32 +6,12 @@ cmd=
 log() {
     printf "%s\t%s\t%s\n" "$(date -Iseconds)" "$1" "$2" >> "$CALL_LOG"
 }
-ring() {
-    read -r number _ _ _ alpha valid
-    log RING "$number"
-    [ "$valid" = "0" ]
-    if notify-send -r "phone-$number" "Call from $(contacts get-name "$number" || echo "$number") $alpha"; then
-        $0 -a
-    else
-        $0 -h
-    fi
-}
 
 action=$1
 shift
 case $action in
-    end)
+    -e)
         log END
-        rm /tmp/.ringing
-        exit
-    ;;
-    --is-ringing)
-        [ -e /tmp/.ringing ]
-        exit
-        ;;
-    ring)
-        touch /tmp/.ringing
-        ring
         exit
     ;;
     -a)
