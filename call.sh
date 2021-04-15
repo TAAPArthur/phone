@@ -10,6 +10,10 @@ log() {
 action=$1
 shift
 case $action in
+    --ring)
+        log RING "$2"
+        exit
+    ;;
     -e)
         log END
         exit

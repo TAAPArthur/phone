@@ -9,6 +9,7 @@ mqbus-receive phone-ring |  {
     RINGD_DIR=${XDG_CONFIG_DIR:-$HOME/.config}/ringd
     mkdir -p "$RINGD_DIR"
     export NUMBER TYPE SUBADDR SATYPE ALPHA VALIDITY
+    call --ring "$NUMBER"
     while IFS="," read -r NUMBER TYPE SUBADDR SATYPE ALPHA VALIDITY; do
         (
             for file in "$RINGD_DIR"/*.sh; do
