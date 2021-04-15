@@ -222,25 +222,26 @@ void writeConcatenatedSMS(char**ptr, uint16_t refNumber, uint16_t numParts, uint
     writeByte(index, ptr);
 }
 
-void readConcatenatedSMS(const char**c, bool large){
+void readConcatenatedSMSMetadata(const char**c, bool large){
     int csmsRefNumber = readByte(c);
     if(large) {
         csmsRefNumber = (csmsRefNumber <<8) |readByte(c);
     }
     int totalParts = readByte(c); // total parts
     int seqNumber = readByte(c); // seqNumber
-    DEBUG("INFO: %d %d %d\n", csmsRefNumber, totalParts, seqNumber);
+    printf("%d %d %d%c", csmsRefNumber, seqNumber, totalParts, LN_TERMINATOR);
 }
 
 int readUserHeader(const char**c){
     int headerLen = readByte(c);// header len
     int infoElementIdentifier = readByte(c);
     int lengthOfRestOfHeader = readByte(c);
+    printf("%d%c", infoElementIdentifier, LN_TERMINATOR);
     switch(infoElementIdentifier) {
         case CONCAT_SMS_08_BIT_REF_NUMBER:
         case CONCAT_SMS_16_BIT_REF_NUMBER:
             assert(headerLen == lengthOfRestOfHeader +2);
-            readConcatenatedSMS(c, CONCAT_SMS_16_BIT_REF_NUMBER == infoElementIdentifier);
+            readConcatenatedSMSMetadata(c, CONCAT_SMS_16_BIT_REF_NUMBER == infoElementIdentifier);
             break;
         default:
             DEBUG("Unknown element skipping\n");
@@ -258,6 +259,7 @@ void decodeUserHeaderAndMessage(const char**c, bool userDataHeaderPresent,char t
         headerLen = readUserHeader(c);
         dataLength -= headerLen;
     }
+    else printf("0%c0 0 0%c", LN_TERMINATOR, LN_TERMINATOR);
     decodeUserMessage(c, headerLen, dataLength, type, message);
     printf("%s", message);
 }
