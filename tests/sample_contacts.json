@@ -7,7 +7,12 @@
     "group": [
       "TestGroup"
     ],
-    "number": "(123) 456-7890"
+    "number": "(123) 456-7890",
+    "numbers": {
+      "Main": "(123) 456-7890",
+      "Pi": "314 159 2653",
+      "Root2": "1 414 213 5623"
+    }
   },
   "Test2": {
     "email": "test2Email",

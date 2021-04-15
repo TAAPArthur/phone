@@ -1,12 +1,22 @@
 #!/bin/sh
 CONTACTS_FILE=${CONTACTS_FILE:-$HOME/contacts.json}
 PHONE_DIR=${PHONE_DIR:-~/Phone}
+SED_PARSER="s/[-\+()]*//g; s/([0-9]) ([0-9])/\1\2/g"
 
+
+getAltName() {
+    name=$(jq -er "to_entries[] | select (.value.numbers != null) | .key + \".\" + (.value.numbers | to_entries[] |
+        .key + \"\t\" + .value )" "$CONTACTS_FILE" | sed -E "$SED_PARSER" | grep "$1" | head -n1 | awk '{print $1}' )
+    [ -n "$name" ] && echo "$name"
+}
+getDefaultName() {
+    name=$(jq -er "to_entries[] | .key +\"\t\"+ .value.number" "$CONTACTS_FILE" | sed -E "$SED_PARSER" | grep "$1"'$' | head -n1 | awk '{print $1}')
+    [ -n "$name" ] && echo "$name"
+}
 getName() {
-    number="$1"
-    name=$(jq -er "to_entries[] | .key +\"\t\"+ .value.number" "$CONTACTS_FILE" | sed -E "s/[-\+()]*//g; s/([0-9]) ([0-9])/\1\2/g" | grep "$number"'$' | head -n1 | awk '{print $1}')
+    name=$(getDefaultName "$1")
     if [ -z "$name" ]; then
-        name=$(jq -er jq -er "to_entries[] | select (.value.numbers != null) | .key +\"\t\"+ (.value.numbers | .[])" "$CONTACTS_FILE" | sed -E "s/[-\+()]*//g; s/([0-9]) ([0-9])/\1\2/g"| head -n1 | awk '{print $1}')
+        name=$(getAltName "$1")
     fi
     [ -n "$name" ] && echo "$name"
 
