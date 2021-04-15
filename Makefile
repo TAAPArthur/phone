@@ -1,15 +1,19 @@
-all: sms ttyio
+C_BIN = sms ttyio vibrator
+
+all: $(C_BIN)
 
 SCRIPTS := $(wildcard *.sh)
 
-install: sms ttyio
+install: $(C_BIN)
 	for bin in $(SCRIPTS:.sh=); do \
 		install -D -m 0755 "$$bin.sh" "$(DESTDIR)/usr/bin/$$bin" ;\
 	done
-	install -m 0755 -Dt "$(DESTDIR)/usr/bin/" "sms"
-	install -m 0755 -Dt "$(DESTDIR)/usr/bin/" "ttyio"
+	install -m 0755 -Dt "$(DESTDIR)/usr/bin/" $(C_BIN)
 
 sms: sms.c
+	$(CC) -o $@ $^
+
+vibrator: vibrator.c
 	$(CC) -o $@ $^
 
 ttyio: ttyio.c
