@@ -33,6 +33,20 @@ case "$1" in
     list-recents)
         #ls -pt $PHONE_DIR/**/.lastaccess | head | xargs -I{} $0 get-name {}
         ;;
+    link)
+        mkdir -p "$PHONE_DIR/ByName"
+        cd "$PHONE_DIR/ByNumber" || exit
+        find . -type d | {
+            while read -r number; do
+                [ "$number" = "." ] && continue
+                number=$(echo "$number"| sed -E "s/[^0-9]+//g")
+                for name in $(getDefaultName "$number") $(getAltName "$number"); do
+                    [ -n "$name" ] && ln -sf "../ByNumber/$number" "../ByName/$name"
+                done
+            done
+        }
+
+        ;;
     get-name)
         number=$(echo "$2"| sed -E "s/[^0-9]+//g")
         name=$(getName "$number" || getName "${number#1}")
