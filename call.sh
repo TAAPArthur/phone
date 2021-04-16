@@ -26,7 +26,7 @@ case $action in
         if [ "$1" = "--all" ]; then
             cmd="AT+CHUP" # hang up all calls
         else
-            cmd="HUP" # hang up call
+            cmd="ATH" # hang up call
         fi
         LOG_ACTION=HANGUP
         ;;
