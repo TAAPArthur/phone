@@ -1,12 +1,13 @@
-#include <poll.h>
-#include <signal.h>
-#include <stdio.h>
-#include <unistd.h>
-#include <stdlib.h>
-#include <fcntl.h>
-#include <sys/wait.h>
 #include <assert.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <poll.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+#include <sys/file.h>
+#include <sys/wait.h>
+#include <unistd.h>
 #include "ttyio.h"
 #include "config.h"
 #define LEN(A) (sizeof(A)/sizeof(A[0]))
@@ -213,13 +214,54 @@ char* processMetadata(char* buffer){
     }
     return buffer;
 }
-int __attribute__((weak)) main(int argc, char * argv[]) {
-
-    signal(SIGPIPE, SIG_IGN);
-    ttyFD = open(argv[1]?argv[1]:device, O_RDWR|O_NONBLOCK);
-    if(ttyFD==-1) {
+void usage() {
+    printf("ttyio [-chn] [device]\n");
+}
+int processArgs(const char* const* argv){
+    int noLock = 0;
+    int checkOnly = 0;
+    for(; argv[0] && argv[0][0] == '-' ; argv++) {
+        if(argv[0][1] == '-') {
+            argv++;
+            break;
+        }
+        switch(argv[0][1]){
+            case 'h':
+                usage();
+                exit(0);
+            case 'c':
+                checkOnly = 1;
+                break;
+            case 'n':
+                noLock = 1;
+                break;
+            default:
+                usage();
+                exit(1);
+        }
+    }
+    int fd = open(argv[0]?argv[0]:device, O_RDWR|O_NONBLOCK);
+    if(fd ==-1) {
+        perror("Failed open file");
         exit(2);
     }
+    if(!noLock) {
+        if(flock(fd, LOCK_EX | LOCK_NB) == -1){
+            if(errno == EWOULDBLOCK)
+                exit(3);
+            else {
+                perror("Failed to lock file");
+                exit(2);
+            }
+        }
+    }
+    if(checkOnly)
+        exit(0);
+    return fd;
+}
+int __attribute__((weak)) main(int argc, const char * argv[]) {
+    signal(SIGPIPE, SIG_IGN);
+    ttyFD  = processArgs(argv + 1);
     DEBUG("Initializing\n");
     onStart(ttyFD);
     DEBUG("Starting\n");

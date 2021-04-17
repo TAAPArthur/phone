@@ -1,8 +1,9 @@
 #include <scutest/tester.h>
 #include <assert.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <stdio.h>
 #include "../ttyio.h"
 
 char* processMetadata(char*buffer);
@@ -38,6 +39,34 @@ SCUTEST(test_spawn_response) {
     Response failure = {"", .cmd="exit 1"};
     assert(0 == spawnResponse(&success, ""));
     assert(1 == spawnResponse(&failure, ""));
+}
+
+
+int processArgs(const char*const * argv);
+SCUTEST(test_argument_check, .exitCode=3) {
+    processArgs((const char*[]){"/dev/null", NULL});
+    processArgs((const char*[]){"-c", "/dev/null", NULL});
+}
+
+SCUTEST(test_argument_check_only) {
+    processArgs((const char*[]){"-c", "/dev/null", NULL});
+    exit(10);
+}
+
+SCUTEST(test_argument_bad_device, .exitCode=2) {
+    processArgs((const char*[]){"-c", "/this_file_does_not_exit...probabl", NULL});
+}
+
+SCUTEST(test_argument_no_lock) {
+    processArgs((const char*[]){"-n", "/dev/null", NULL});
+    processArgs((const char*[]){"-n", "-c", "/dev/null", NULL});
+    processArgs((const char*[]){"-n", "/dev/null", NULL});
+}
+
+
+SCUTEST(test_argument_lock_different_device) {
+    processArgs((const char*[]){"/dev/null", NULL});
+    processArgs((const char*[]){"/dev/zero", NULL});
 }
 
 int main(int argc, char * argv[]) {
