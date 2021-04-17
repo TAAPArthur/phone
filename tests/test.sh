@@ -27,7 +27,7 @@ EOF
             echo "failed on line $i"
             failTest "$script"
         fi
-        #read -r expected <&3 && exit 1
+        read -r expected <&3 && failTest "$script"
         echo "passed"
     }
     exec 3<&-

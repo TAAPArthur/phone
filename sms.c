@@ -296,7 +296,7 @@ void decodeSMSSubmit(const char**c, uint8_t firstByte) {
     bool userDataHeaderPresent = readBit(&firstByte);
     readBit(&firstByte); //replyPath
     readByte(c); // messageRef
-    char number[MAX_PHONE_NUMBER_SIZE ];
+    char number[MAX_PHONE_NUMBER_SIZE ] = {0};
     readPhoneAddress(c, number);
     readByte(c);// TP-PID Protocol identifier
     char dataCoding = readByte(c);
