@@ -20,13 +20,13 @@
 #define CONCAT_SMS_16_BIT_REF_NUMBER 0x08
 
 
+#define MAX_PHONE_NUMBER_SIZE 128
 
 typedef enum {
     GSM_7_BIT= 0x00,
     GSM_8_BIT= 0x04,
     GSM_UCS2 =0x08,
 } GSMEncodingType;
-#define MAX_PHONE_NUMBER_SIZE 15
 typedef enum {
     SMS_DELIVER =0b00,
     SMS_SUBMIT_REPORT  =0b01,
