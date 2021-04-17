@@ -80,7 +80,6 @@ int main(int argc, char* argv[])
         }
     }
     int fd, ret;
-    struct pollfd pfds[1];
     int effects;
 
     fd = open_event_dev("vibrator", O_RDWR | O_CLOEXEC);

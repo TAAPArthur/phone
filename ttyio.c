@@ -69,7 +69,7 @@ int spawn(const char* cmd) {
     DEBUG("Executing command %s\n", cmd);
     int pid = fork();
     if(!pid) {
-        int ret = execlp(SHELL, SHELL, "-c", cmd, NULL);
+        execlp(SHELL, SHELL, "-c", cmd, NULL);
         perror("Failed exec");
         exit(1);
     }
@@ -194,7 +194,6 @@ void onStart(int ttyFD) {
     }
 }
 static void processMetadataHelper(char* buffer){
-    int ret;
     if(strncmp("MSG_TERM", buffer, 8) == 0) {
         buffer[strlen(buffer) + 1] = 0;
         buffer[strlen(buffer)] = MSG_ENDING;

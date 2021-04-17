@@ -12,7 +12,7 @@ char writeBit(uint8_t *byte, bool bit);
 
 
 SCUTEST(read_write_single_bit) {
-    unsigned char buffer = 0;
+    uint8_t buffer = 0;
     const char bits[8] = { 0,0,1,1,0,1,1,1};
     for(int i=0; i < 8; i++)
         writeBit(&buffer, bits[i]);
@@ -22,7 +22,7 @@ SCUTEST(read_write_single_bit) {
     }
 }
 SCUTEST(read_write_bits) {
-    char buffer = 0;
+    uint8_t buffer = 0;
     writeBits(&buffer, 0b10, 2);
     assert(buffer == 0b10);
     writeBits(&buffer, 0b01, 2);

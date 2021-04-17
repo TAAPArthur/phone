@@ -1,8 +1,8 @@
-C_BIN = sms ttyio vibrator
+C_BIN := sms ttyio vibrator
+SCRIPTS := $(wildcard *.sh)
+CFLAGS := -Wall -Werror
 
 all: $(C_BIN)
-
-SCRIPTS := $(wildcard *.sh)
 
 install: $(C_BIN)
 	for bin in $(SCRIPTS:.sh=); do \
@@ -11,13 +11,13 @@ install: $(C_BIN)
 	install -m 0755 -Dt "$(DESTDIR)/usr/bin/" $(C_BIN)
 
 sms: sms.c
-	$(CC) -o $@ $^
+	$(CC) $(CFLAGS) -o $@ $^
 
 vibrator: vibrator.c
-	$(CC) -o $@ $^
+	$(CC) $(CFLAGS) -o $@ $^
 
 ttyio: ttyio.c
-	$(CC) -o $@ $^
+	$(CC) $(CFLAGS) -o $@ $^
 
 sms-test: sms.c tests/sms_unit.c
 	$(CC) $(CFLAGS) $^ -o $@ $(LDFLAGS) -lscutest
@@ -25,10 +25,11 @@ sms-test: sms.c tests/sms_unit.c
 ttyio-test: ttyio.c tests/ttyio_unit.c
 	$(CC) $(CFLAGS) $^ -o $@ $(LDFLAGS) -lscutest
 
+test: CFLAGS += -O0 -g
 test: sms-test ttyio-test *.sh all
 	./sms-test
 	./ttyio-test
 	tests/test.sh
 
 clean:
-	rm -f *.o ttyio sms sms-test
+	rm -f *.o $(C_BIN) *-test

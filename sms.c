@@ -72,7 +72,7 @@ void decodeSeptWithPadding(const char*str, int len, int padding, char* buffer) {
         carry = (rawByte & ~(mask)) >> (7-i%8);
     }
     buffer[n]=0;
-    TRACE("Remaining string '%s' %d %d\n", str, strlen(str), len);
+    TRACE("Remaining string '%s' %ld %d\n", str, strlen(str), len);
     //assert(!str[0]);
 }
 void decodeSept(const char*str, int len, char* buffer) {
@@ -81,7 +81,6 @@ void decodeSept(const char*str, int len, char* buffer) {
 int encodeSeptWithPadding(const char*str, int len, int padding, char* buffer) {
     unsigned char mask = -1;
     int n=0;
-    int carry = 0;
     int i = 0;
     if(padding) {
         i = 7 - padding;
@@ -186,7 +185,7 @@ void decodeUserMessage(const char**c, uint8_t headerLen, uint8_t dataLength, uin
             break;
         case GSM_8_BIT:
             for(int i=0;*c && i<102;i++){
-                char a= readByte(c);
+                readByte(c);
                 //printf("%c", a);
                 printf("'%s' (%ld)\n",*c, strlen(*c));
             }
@@ -386,9 +385,6 @@ void encodeSMSMessage(const char*number, const char*msg, int type) {
     writeByte(type, &ptr); // Data coding scheme
     if(splitMessage) {
         DEBUG("Using concatenated sms messages; current buffer: \n%s\n", buffer);
-        int i=0;
-        int remainder;
-
         int maxConcatLen = getMaxMessageSizePerType(type) - 8;
         int numParts = (realMessageLen -1) / maxConcatLen + 1;
 
