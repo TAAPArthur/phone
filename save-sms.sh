@@ -21,12 +21,13 @@ sms -d "$1" | {
         read -r id seqNum numParts
         headerString="$header $id $seqNum $numParts"
     fi
+    read -r encoding
 
     msg="$(cat -)"
     echo "Saving $timestamp $number $headerString $msg"
     SMS_DATE_DIR="$PHONE_DIR/ByNumber/$number/"
     mkdir -p "$SMS_DATE_DIR"
-    printf "%s\t%s\t%s\t%s\0\n" "$(date -Iseconds)" "$timestamp" "$headerString" "$msg" >> "$SMS_DATE_DIR/sms.txt"
+    printf "%s\t%s\t%s\t%s\t%s\0\n" "$(date -Iseconds)" "$timestamp" "$headerString" "$encoding" "$msg" >> "$SMS_DATE_DIR/sms.txt"
     if [ -n "$SMS_INDEX" ]; then
         printf "%s" "$timestamp" > "$SMS_INDEX_FILE"
     fi

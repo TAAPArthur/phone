@@ -173,7 +173,7 @@ void decodeUCS2(const char*str, int len, char* buffer) {
     }
     buffer[len]=0;
 }
-void decodeUserMessage(const char**c, uint8_t headerLen, uint8_t dataLength, uint8_t type, char* buffer) {
+GSMEncodingType decodeUserMessage(const char**c, uint8_t headerLen, uint8_t dataLength, uint8_t type, char* buffer) {
     GSMEncodingType  dateEncoding = GSM_7_BIT;
     GSMEncodingType  TYPES[]={GSM_7_BIT, GSM_8_BIT, GSM_UCS2 };
     if(type <= 127 || type >= 240)
@@ -184,13 +184,6 @@ void decodeUserMessage(const char**c, uint8_t headerLen, uint8_t dataLength, uin
             decodeSeptWithPadding(*c, dataLength, headerLen % 7 , buffer);
             break;
         case GSM_8_BIT:
-            for(int i=0;*c && i<102;i++){
-                readByte(c);
-                //printf("%c", a);
-                printf("'%s' (%ld)\n",*c, strlen(*c));
-            }
-            break;
-
             for(int i=0;*c;i++){
                 buffer[i] = readByte(c);
             }
@@ -201,6 +194,7 @@ void decodeUserMessage(const char**c, uint8_t headerLen, uint8_t dataLength, uin
         default:
             die("Unsupported gsm type");
     }
+    return dateEncoding;
 }
 int setenvInt(const char*name, int value) {
     char buffer[5]={0};
@@ -259,7 +253,8 @@ void decodeUserHeaderAndMessage(const char**c, bool userDataHeaderPresent,char t
         dataLength -= headerLen;
     }
     else printf("0%c0 0 0%c", LN_TERMINATOR, LN_TERMINATOR);
-    decodeUserMessage(c, headerLen, dataLength, type, message);
+    GSMEncodingType encoding = decodeUserMessage(c, headerLen, dataLength, type, message);
+    printf("%d%c", encoding,LN_TERMINATOR);
     printf("%s", message);
 }
 
