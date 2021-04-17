@@ -8,9 +8,6 @@
 #define SMS_INDEX_ENV_NAME "SMS_INDEX"
 
 #define MSG_ENDING 0x1A
-const char MSG_ENDING_STR[] = {MSG_ENDING};
-const char LN_ENDING[] ="\r\n";
-const char * device = "/dev/ttyUSB2";
 
 #define SHELL "/bin/sh"
 
@@ -35,25 +32,5 @@ typedef struct {
     void(*successFunction)(const char*s);
     int flags;
 } Response;
-
-Response responses[] = {
-    {"OK", markSuccess},
-    {">", clearWaiting, .cmd = "save-sms %s", .flags = MULTI_LINE_FLAG | ADD_RESPONSE_FLAG },
-    {"+CME ERROR: ", markError},
-    {"ERROR", markError},
-    {"RING"},
-    {"+CLIP:", .cmd = "ringd -s %s", .flags = STRIP_LABEL | ADD_RESPONSE_FLAG},
-    {"NO CARRIER", .cmd = "call -e %s"},
-    {"+CMTI: ", receiveSMSNotification},
-    {"+CMGL: ", readSMS, .cmd = "save-sms %s", .successFunction = deleteSMS, .flags = MULTI_LINE_FLAG | ADD_RESPONSE_FLAG },
-    {"+CMGR: ", readSMS, .cmd = "save-sms %s", .successFunction = deleteSMS, .flags = MULTI_LINE_FLAG | ADD_RESPONSE_FLAG },
-};
-
-
-const char* onStartCmds[] = {
-    "AT+CLIP=1", // turn on caller id
-    "AT+CMGL=4", // dump all stored messages
-    "ATE1", // echo input back
-};
 #endif
 

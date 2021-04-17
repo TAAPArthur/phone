@@ -8,6 +8,7 @@
 #include <assert.h>
 #include <string.h>
 #include "ttyio.h"
+#include "config.h"
 #define LEN(A) (sizeof(A)/sizeof(A[0]))
 
 #ifndef NDEBUG
@@ -15,6 +16,8 @@
 #endif
 
 #define OUTPUT(X...) dprintf(1, X)
+
+const char MSG_ENDING_STR[] = {MSG_ENDING};
 int ttyFD;
 int status = SUCCESS;
 int waiting = 0;
