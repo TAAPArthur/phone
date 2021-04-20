@@ -160,8 +160,10 @@ int readLine(int fd, char*buffer) {
         int ret = read(fd, buffer+i, 1);
 
         if(ret == 0) {
-            DEBUG("EOF\n");
-            break;
+            if(i == 0)
+                return -1;
+            else
+                break;
         }
         else if(ret == -1) {
             perror("error reading?");
@@ -270,6 +272,16 @@ int processArgs(const char* const* argv){
     }
     return fd;
 }
+
+void handEndOfFD(int fd) {
+    if(fd == STDIN_FILENO) {
+        if(!isWaiting())
+            exit(status);
+    } else {
+        perror("Poll dead");
+        exit(1);
+    }
+}
 int __attribute__((weak)) main(int argc, const char * argv[]) {
     signal(SIGPIPE, SIG_IGN);
     ttyFD  = processArgs(argv + 1);
@@ -289,7 +301,14 @@ int __attribute__((weak)) main(int argc, const char * argv[]) {
                     sleep(1);
                     break;
                 }
-                readLine(fds[i].fd, buf);
+                int ret = readLine(fds[i].fd, buf);
+                if(ret == -1) {
+                    DEBUG("Reached end of device %d", i);
+                    handEndOfFD(fds[i].fd);
+                    numFDs--;
+                    break;
+                }
+
                 const char* data = processMetadata(buf);
                 if (data && data[0]) {
                     if(ttyFD == fds[i].fd) {
@@ -306,17 +325,8 @@ int __attribute__((weak)) main(int argc, const char * argv[]) {
                 break;
             }
             else if(fds[i].revents & (POLLERR | POLLNVAL | POLLHUP)) {
-                if(fds[i].fd == ttyFD) {
-                    perror("Poll dead");
-                    exit(1);
-                } else {
-                    if(!isWaiting())
-                        exit(status);
-                    int chars = readLine(fds[i].fd, buf);
-                    DEBUG("End of stdin: '%s' %d\n\n", buf, chars);
-                    numFDs--;
-                    break;
-                }
+                DEBUG("FD error");
+                handEndOfFD(fds[i].fd);
             }
         }
 
