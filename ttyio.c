@@ -242,7 +242,7 @@ int processArgs(const char* const* argv){
     }
     const char* path = argv[0]?argv[0]:device;
 
-    int fd = open(path, O_RDWR|O_NONBLOCK);
+    int fd = open(path, O_RDWR|O_NONBLOCK|O_CLOEXEC);
     if(fd ==-1) {
         perror("Failed open file");
         exit(2);
