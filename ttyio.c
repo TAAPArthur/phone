@@ -134,7 +134,7 @@ void readSMS(const char*s) {
 
 void processResponse(const char* response) {
     for(int i=0;i<LEN(responses);i++) {
-        if(memcmp(responses[i].response, response, strlen(responses[i].response)) == 0) {
+        if(memcmp(responses[i].response, response, strlen(responses[i].response)) == 0 && (!(responses[i].flags & ONLY_IF_WAITING) || isWaiting())) {
             lastResponse = responses + i;
             DEBUG("Triggering response %d: %s\n", i, responses[i].response);
             if(responses[i].f) {
