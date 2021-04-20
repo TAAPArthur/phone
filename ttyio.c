@@ -16,7 +16,7 @@
 #define DEBUG(X...) dprintf(2, X)
 #endif
 
-#define OUTPUT(X...) dprintf(1, X)
+#define OUTPUT(X...) do {dprintf(1, X); DEBUG(X);} while(0)
 
 const char MSG_ENDING_STR[] = {MSG_ENDING};
 int ttyFD;
@@ -78,6 +78,7 @@ int spawn(const char* cmd) {
     int status = 0;
     waitpid(pid, &status, 0);
     int exitCode = WIFEXITED(status) ? WEXITSTATUS(status) : WIFSIGNALED(status) ? WTERMSIG(status) : -1;
+    DEBUG("%s exited with status %d\n", cmd, exitCode);
     return exitCode;
 }
 
@@ -158,9 +159,12 @@ int readLine(int fd, char*buffer) {
     for(i=0;i<len;i++){
         int ret = read(fd, buffer+i, 1);
 
-        if(ret == 0)
+        if(ret == 0) {
+            DEBUG("EOF\n");
             break;
+        }
         else if(ret == -1) {
+            perror("error reading?");
             break;
         }
         if(buffer[i] == '\n' || buffer[i] == '\r'){
@@ -276,10 +280,12 @@ int __attribute__((weak)) main(int argc, const char * argv[]) {
     struct pollfd fds[] = {{ttyFD, POLLIN}, {STDIN_FILENO, POLLIN}};
     int numFDs = LEN(fds);
     while(poll(fds, numFDs, -1) >= 0) {
-        char buf[4096]={0};
-        for(int i = 0; i < LEN(fds); i++) {
+        char buf[4096] = {0};
+        assert(numFDs);
+        for(int i = 0; i < numFDs; i++) {
             if(fds[i].revents & POLLIN) {
                 if(isWaiting() && ttyFD != fds[i].fd) {
+                    DEBUG("Waiting on modem\n");
                     sleep(1);
                     break;
                 }
