@@ -20,5 +20,11 @@
       "Test2Group"
     ],
     "number": "2345678901"
+  },
+  "Spaces test": {
+    "number": "112 358 1321",
+    "numbers": {
+      "Other": "122 333 4444"
+    }
   }
 }

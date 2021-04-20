@@ -5,18 +5,18 @@ SED_PARSER="s/[-\+()]*//g; s/([0-9]) ([0-9])/\1\2/g"
 
 
 getAltName() {
-    name=$(jq -er "to_entries[] | select (.value.numbers != null) | .key + \".\" + (.value.numbers | to_entries[] |
-        .key + \"\t\" + .value )" "$CONTACTS_FILE" | sed -E "$SED_PARSER" | grep "$1" | head -n1 | awk '{print $1}' )
+    name="$(jq -er "to_entries[] | select (.value.numbers != null) | .key + \".\" + (.value.numbers | to_entries[] |
+        .key + \"\t\" + .value )" "$CONTACTS_FILE" | sed -E "$SED_PARSER" | grep "$1" | head -n1 | cut -f1 )"
     [ -n "$name" ] && echo "$name"
 }
 getDefaultName() {
-    name=$(jq -er "to_entries[] | .key +\"\t\"+ .value.number" "$CONTACTS_FILE" | sed -E "$SED_PARSER" | grep "$1"'$' | head -n1 | awk '{print $1}')
+    name="$(jq -er "to_entries[] | .key +\"\t\"+ .value.number" "$CONTACTS_FILE" | sed -E "$SED_PARSER" | grep "$1"'$' | head -n1 | cut -f1)"
     [ -n "$name" ] && echo "$name"
 }
 getName() {
-    name=$(getDefaultName "$1")
+    name="$(getDefaultName "$1")"
     if [ -z "$name" ]; then
-        name=$(getAltName "$1")
+        name="$(getAltName "$1")"
     fi
     [ -n "$name" ] && echo "$name"
 
@@ -49,7 +49,7 @@ case "$1" in
         ;;
     get-name)
         number=$(echo "$2"| sed -E "s/[^0-9]+//g")
-        name=$(getName "$number" || getName "${number#1}")
+        name="$(getName "$number" || getName "${number#1}")"
         [ -z "$name" ] && echo "$number" || echo "$name"
         ;;
     get-number)
