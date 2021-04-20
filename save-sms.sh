@@ -6,6 +6,7 @@ sms -d "$1" | {
     timestamp="$date $time $tz"
     read -r number
     [ -n "$number" ]
+    [ "$number" = "1${number#1}" ] && number="${number#1}"
 
     if [ -n "$SMS_INDEX" ]; then
         INDEX_DIR="$PHONE_DIR/.index"
