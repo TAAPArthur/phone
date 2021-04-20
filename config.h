@@ -19,6 +19,9 @@ Response responses[] = {
     {"+CMGR: ", readSMS, .cmd = "save-sms %s", .successFunction = deleteSMS, .flags = MULTI_LINE_FLAG | ADD_RESPONSE_FLAG },
 };
 
+const char* onStartDeviceCmds[] = {
+    "stty -F %s -icanon -echo"
+};
 
 const char* onStartCmds[] = {
     "AT+CLIP=1", // turn on caller id

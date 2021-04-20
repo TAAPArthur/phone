@@ -240,7 +240,9 @@ int processArgs(const char* const* argv){
                 exit(1);
         }
     }
-    int fd = open(argv[0]?argv[0]:device, O_RDWR|O_NONBLOCK);
+    const char* path = argv[0]?argv[0]:device;
+
+    int fd = open(path, O_RDWR|O_NONBLOCK);
     if(fd ==-1) {
         perror("Failed open file");
         exit(2);
@@ -257,6 +259,11 @@ int processArgs(const char* const* argv){
     }
     if(checkOnly)
         exit(0);
+    for(int i = 0; i < LEN(onStartDeviceCmds); i++) {
+        char buffer[255];
+        snprintf(buffer, LEN(buffer), onStartDeviceCmds[i], path);
+        spawn(buffer);
+    }
     return fd;
 }
 int __attribute__((weak)) main(int argc, const char * argv[]) {
