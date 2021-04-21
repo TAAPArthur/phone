@@ -13,13 +13,19 @@ getDefaultName() {
     name="$(jq -er "to_entries[] | .key +\"\t\"+ .value.number" "$CONTACTS_FILE" | sed -E "$SED_PARSER" | grep "$1"'$' | head -n1 | cut -f1)"
     [ -n "$name" ] && echo "$name"
 }
-getName() {
+getNameOrAltName() {
     name="$(getDefaultName "$1")"
     if [ -z "$name" ]; then
         name="$(getAltName "$1")"
     fi
     [ -n "$name" ] && echo "$name"
 
+}
+
+getName() {
+    number="$1"
+    name="$(getNameOrAltName "$number" || getNameOrAltName "${number#1}")"
+    [ -z "$name" ] && echo "$number" || echo "$name"
 }
 case "$1" in
     list-all)
@@ -28,10 +34,13 @@ case "$1" in
     list)
         jq -r "to_entries[]|select (.value.group | index(\"FriendLike\")) | .key" "$CONTACTS_FILE"
         ;;
-    list-sorted)
-        ;;
     list-recents)
-        #ls -pt $PHONE_DIR/**/.lastaccess | head | xargs -I{} $0 get-name {}
+        cd "$PHONE_DIR" || exit
+        find ByNumber/ -type f -exec stat -c "%Y %n" {} \; | sort -r | head -n10 | cut -d"/" -f2 | {
+            while read -r number; do
+                getName "$number"
+            done
+        }
         ;;
     link)
         mkdir -p "$PHONE_DIR/ByName"
@@ -48,9 +57,8 @@ case "$1" in
 
         ;;
     get-name)
-        number=$(echo "$2"| sed -E "s/[^0-9]+//g")
-        name="$(getName "$number" || getName "${number#1}")"
-        [ -z "$name" ] && echo "$number" || echo "$name"
+        number=$(echo "$2" | sed -E "s/[^0-9]+//g")
+        getName "$number"
         ;;
     get-number)
         (jq -er ".\"$2\".number" "$CONTACTS_FILE" || echo "$2") | tail -n 1| sed -E "s/[^0-9]+//g"
