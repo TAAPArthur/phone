@@ -32,4 +32,5 @@ sms -d "$1" | {
     if [ -n "$SMS_INDEX" ]; then
         printf "%s" "$timestamp" > "$SMS_INDEX_FILE"
     fi
+    echo "$number $msg" | tr "\r" "\n" | smsd -s
 }

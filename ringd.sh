@@ -1,11 +1,11 @@
 #!/bin/sh -e
 
 if [ "$1" = "-s" ]; then
-    echo "$2" | mqsend phone-ring
+    echo "$2" | mqbus-send ringd
     exit
 fi
 
-mqreceive phone-ring |  {
+mqbus-receive ringd |  {
 
     RINGD_DIR=${XDG_CONFIG_DIR:-$HOME/.config}/ringd
     mkdir -p "$RINGD_DIR"
