@@ -70,6 +70,7 @@ int spawn(const char* cmd) {
     DEBUG("Executing command %s\n", cmd);
     int pid = fork();
     if(!pid) {
+        dup2(STDERR_FILENO, STDOUT_FILENO);
         execlp(SHELL, SHELL, "-c", cmd, NULL);
         perror("Failed exec");
         exit(1);
@@ -78,7 +79,7 @@ int spawn(const char* cmd) {
     int status = 0;
     waitpid(pid, &status, 0);
     int exitCode = WIFEXITED(status) ? WEXITSTATUS(status) : WIFSIGNALED(status) ? WTERMSIG(status) : -1;
-    DEBUG("%s exited with status %d\n", cmd, exitCode);
+    DEBUG("cmd exited with status %d\n", exitCode);
     return exitCode;
 }
 
