@@ -1,6 +1,6 @@
 #!/bin/sh -e
 
-CALL_DIR=${PHONE_DIR:-~/Phone}
+CALL_DIR=${PHONE_DIR:-/var/phone}
 CALL_LOG=$CALL_DIR/call.log
 cmd=
 log() {

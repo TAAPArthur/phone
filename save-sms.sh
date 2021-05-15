@@ -1,6 +1,7 @@
 #!/bin/sh -e
 
-PHONE_DIR=${PHONE_DIR:-~/Phone}
+PHONE_DIR=${PHONE_DIR:-/var/phone}
+[ -e "$PHONE_DIR" ] || mkdir -p "$PHONE_DIR"
 sms -d "$1" | {
     read -r date time tz
     timestamp="$date $time $tz"

@@ -1,6 +1,7 @@
 #!/bin/sh
 CONTACTS_FILE=${CONTACTS_FILE:-$HOME/contacts.json}
-PHONE_DIR=${PHONE_DIR:-~/Phone}
+PHONE_DIR=${PHONE_DIR:-/var/phone}
+LOCAL_PHONE_DIR=${LOCAL_PHONE_DIR:-~/Phone}
 SED_PARSER="s/[-\+()]*//g; s/([0-9]) ([0-9])/\1\2/g"
 
 
@@ -43,14 +44,15 @@ case "$1" in
         }
         ;;
     link)
-        mkdir -p "$PHONE_DIR/ByName"
-        cd "$PHONE_DIR/ByNumber" || exit
-        find . -type d | {
-            while read -r number; do
-                [ "$number" = "." ] && continue
-                number=$(echo "$number"| sed -E "s/[^0-9]+//g")
+        mkdir -p "$LOCAL_PHONE_DIR/ByName"
+        [ -d "$LOCAL_PHONE_DIR/ByNumber" ] || ln -sf "$PHONE_DIR/ByNumber" "$LOCAL_PHONE_DIR/ByNumber"
+        [ -f "$LOCAL_PHONE_DIR/call.log" ] || ln -sf "$PHONE_DIR/call.log" "$LOCAL_PHONE_DIR/call.log"
+        find "$LOCAL_PHONE_DIR/ByNumber/" -type d | {
+            while read -r dir; do
+                number=$(basename "$dir" | sed -E "s/[^0-9]+//g")
+                [ -z "$number" ] && continue
                 for name in $(getDefaultName "$number") $(getAltName "$number"); do
-                    [ -n "$name" ] && ln -sf "../ByNumber/$number" "../ByName/$name"
+                    [ -n "$name" ] && ln -sf "../ByNumber/$number" "$LOCAL_PHONE_DIR/ByName/$name"
                 done
             done
         }
