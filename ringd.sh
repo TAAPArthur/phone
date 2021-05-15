@@ -12,11 +12,9 @@ mqbus-receive ringd |  {
     export NUMBER TYPE SUBADDR SATYPE ALPHA VALIDITY
     while IFS="," read -r NUMBER TYPE SUBADDR SATYPE ALPHA VALIDITY; do
         (
-            call --ring "$NUMBER"
             for file in "$RINGD_DIR"/*.sh; do
                 [ -r "$file" ] && . "$file"
             done
         )
     done
 }
-

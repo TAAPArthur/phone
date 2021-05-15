@@ -11,7 +11,7 @@ Response responses[] = {
     {">", clearWaiting, .cmd = "save-sms %s", .flags = MULTI_LINE_FLAG | ADD_RESPONSE_FLAG },
     {"+CME ERROR: ", markError},
     {"ERROR", markError},
-    {"RING"},
+    {"RING", .cmd = "call --ring"},
     {"+CLIP:", .cmd = "ringd -s %s", .flags = STRIP_LABEL | ADD_RESPONSE_FLAG},
     {"NO CARRIER", markError, .flags = ONLY_IF_WAITING },
     {"NO CARRIER", .cmd = "call -e"},
