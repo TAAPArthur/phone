@@ -29,7 +29,7 @@ sms -d "$1" | {
     echo "Saving $timestamp $number $headerString $msg"
     SMS_DIR="$PHONE_DIR/ByNumber/$number/"
     mkdir -p "$SMS_DIR"
-    printf "%s\t%s\t%s\t%s\t%s\0\n" "$(date -Iseconds)" "$timestamp" "$headerString" "$encoding" "$msg" >> "$SMS_DIR/sms.txt"
+    printf "%s\t%s\t%s\t%s\t%s\0\n" "$(date +%FT%H:%M:%S%z)" "$timestamp" "$headerString" "$encoding" "$msg" >> "$SMS_DIR/sms.txt"
     if [ -n "$SMS_INDEX" ]; then
         printf "%s" "$timestamp" > "$SMS_INDEX_FILE"
     fi
