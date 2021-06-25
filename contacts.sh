@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/sh -e
 CONTACTS_FILE=${CONTACTS_FILE:-$HOME/contacts.json}
 PHONE_DIR=${PHONE_DIR:-/var/phone}
 LOCAL_PHONE_DIR=${LOCAL_PHONE_DIR:-~/Phone}
