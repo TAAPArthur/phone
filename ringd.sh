@@ -1,4 +1,4 @@
-#!/bin/sh -e
+#!/bin/sh
 
 if [ "$1" = "-s" ]; then
     echo "$2" | mqbus-send ringd

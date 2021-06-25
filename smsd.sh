@@ -1,4 +1,4 @@
-#!/bin/sh -e
+#!/bin/sh
 
 if [ "$1" = "-s" ]; then
     mqbus-send smsd
