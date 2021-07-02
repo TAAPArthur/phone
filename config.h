@@ -12,6 +12,7 @@ Response responses[] = {
     {"+CME ERROR: ", markError},
     {"ERROR", markError},
     {"RING", .cmd = "call --ring"},
+    {"+CLIP:", .cmd = "call --ring %s", .flags = STRIP_LABEL | ADD_RESPONSE_FLAG},
     {"+CLIP:", .cmd = "ringd -s %s", .flags = STRIP_LABEL | ADD_RESPONSE_FLAG},
     {"NO CARRIER", markError, .flags = ONLY_IF_WAITING },
     {"NO CARRIER", .cmd = "call -e"},
