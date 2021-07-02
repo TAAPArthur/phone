@@ -4,7 +4,7 @@ CALL_DIR=${PHONE_DIR:-/var/phone}
 CALL_LOG=$CALL_DIR/call.log
 cmd=
 log() {
-    printf "%s\t%s\t%s\n" "$(date -Iseconds)" "$1" "$2" >> "$CALL_LOG"
+    printf "%s\t%s\t%s\n" "$(date +%FT%H:%M:%S%z)" "$1" "$2" >> "$CALL_LOG"
 }
 
 action=$1
