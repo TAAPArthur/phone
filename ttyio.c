@@ -117,8 +117,10 @@ void receiveSMSNotification(const char*s) {
 void deleteSMS() {
     char buffer[16];
     if(getenv(SMS_INDEX_ENV_NAME)) {
+        DEBUG("Attempting to delete sms msg at index %s", getenv(SMS_INDEX_ENV_NAME));
         sprintf(buffer,"AT+CMGD=%s%s", getenv(SMS_INDEX_ENV_NAME), LN_ENDING);
         writeData(buffer);
+        DEBUG("Sent deletion");
     }
 }
 void readSMS(const char*s) {
@@ -256,8 +258,10 @@ int processArgs(const char* const* argv){
     }
     if(!noLock) {
         if(flock(fd, LOCK_EX | LOCK_NB) == -1){
-            if(errno == EWOULDBLOCK)
+            if(errno == EWOULDBLOCK) {
+                perror("File is already locked");
                 exit(3);
+            }
             else {
                 perror("Failed to lock file");
                 exit(2);
@@ -276,8 +280,10 @@ int processArgs(const char* const* argv){
 
 void handEndOfFD(int fd) {
     if(fd == STDIN_FILENO) {
-        if(!isWaiting())
+        if(!isWaiting()) {
+            DEBUG("Reached end of FD");
             exit(status);
+        }
     } else {
         perror("Poll dead");
         exit(1);
@@ -331,7 +337,9 @@ int __attribute__((weak)) main(int argc, const char * argv[]) {
             }
         }
 
-        if(!isWaiting() && numFDs ==1)
+        if(!isWaiting() && numFDs ==1) {
+            DEBUG("Exiting because modem is only remaining FD");
             exit(0);
+        }
     }
 }
