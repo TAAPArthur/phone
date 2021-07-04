@@ -85,7 +85,7 @@ int spawn(const char* cmd) {
 }
 
 int spawnResponse(Response* response, const char* arg) {
-    char buffer[CMD_BUFFER];
+    static char buffer[CMD_BUFFER];
     const char*cmd = response->cmd;
 
     if(response->flags & ADD_RESPONSE_FLAG) {
@@ -272,9 +272,9 @@ int processArgs(const char* const* argv){
     }
     if(checkOnly)
         exit(0);
+    static char buffer[CMD_BUFFER];
     for(int i = 0; i < LEN(onStartDeviceCmds); i++) {
-        char buffer[255];
-        snprintf(buffer, LEN(buffer), onStartDeviceCmds[i], path);
+        snprintf(buffer, LEN(buffer) - 1, onStartDeviceCmds[i], path);
         spawn(buffer);
     }
     return fd;
