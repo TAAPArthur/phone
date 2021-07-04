@@ -58,6 +58,7 @@ void markError(){
 }
 void clearWaiting(){setStatus(IN_PROGRESS);}
 void writeData(const char* s) {
+    DEBUG("Attempting to write '%s' to tty\n", s);
     if(write(ttyFD, s, strlen(s)) == -1) {
         perror("Failed to write data");
         exit(1);
@@ -186,6 +187,7 @@ void onStart(int ttyFD) {
     setWaiting(0);
     struct pollfd fds[] = {{ttyFD, POLLIN}};
     for(int i = 0; i < LEN(onStartCmds); i++) {
+        DEBUG("Running command %d\n", i);
         writeData(onStartCmds[i]);
         writeData(LN_ENDING);
         while(isWaiting()){
