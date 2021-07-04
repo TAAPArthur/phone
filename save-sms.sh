@@ -9,14 +9,6 @@ sms -d "$1" | {
     [ -n "$number" ]
     [ "$number" = "1${number#1}" ] && number="${number#1}"
 
-    if [ -n "$SMS_INDEX" ]; then
-        INDEX_DIR="$PHONE_DIR/.index"
-        mkdir -p "$INDEX_DIR"
-        SMS_INDEX_FILE="$INDEX_DIR/$SMS_INDEX"
-        if [ -f "$SMS_INDEX_FILE" ] && [ "$(cat "$SMS_INDEX_FILE")" = "$timestamp" ]; then
-            exit 0
-        fi
-    fi
     read -r header
     headerString=$header
     if  [ "$header" -eq 0 ] || [ "$header" -eq 8 ]; then
@@ -30,8 +22,5 @@ sms -d "$1" | {
     SMS_DIR="$PHONE_DIR/ByNumber/$number/"
     mkdir -p "$SMS_DIR"
     printf "%s\t%s\t%s\t%s\t%s\0\n" "$(date +%FT%H:%M:%S%z)" "$timestamp" "$headerString" "$encoding" "$msg" >> "$SMS_DIR/sms.txt"
-    if [ -n "$SMS_INDEX" ]; then
-        printf "%s" "$timestamp" > "$SMS_INDEX_FILE"
-    fi
     echo "$number $msg" | tr "\r" "\n" | smsd -s
 }
