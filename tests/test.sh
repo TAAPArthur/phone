@@ -4,13 +4,16 @@ failTest() {
     echo "############################"
     . "$1"
     echo "############################"
+    echo "Failed ${N}th test"
     exit 3
 }
+N=0
 for script in tests/0*.sh; do
     printf "%s..." "$script"
     exec 3<<EOF
 $(grep '# ' "$script" | cut -d' ' -f2-)
 EOF
+    N=$((N+1))
     i=0
     /bin/sh "$script" 1>/dev/null 2>&1
     /bin/sh "$script" 2>/dev/null 3>/dev/null | {

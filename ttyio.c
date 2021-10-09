@@ -201,6 +201,7 @@ void onStart(int ttyFD) {
             if (chars) {
                 DEBUG("'%s' (%ld)\n",  buf, strlen(buf));
                 processResponse(buf);
+                DEBUG("Finished: '%s' (%ld)\n",  buf, strlen(buf));
             }
         }
     }
