@@ -1,6 +1,10 @@
 #!/bin/sh
-./contacts.sh list-all
+./contacts.sh list
+# Spaces test.Other
 # Spaces test
-# Tes
 # Test
+# Test.Pi
+# Test.Root2
 # Test2
+# Test
+# Tes

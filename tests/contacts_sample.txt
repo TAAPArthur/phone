@@ -1,0 +1,8 @@
+Spaces test.Other|122 333 4444
+Spaces test|112 358 1321
+Test|(123) 456-7890|
+Test.Pi|314 159 2653|
+Test.Root2|1 414 213 5623|
+Test2|2345678901|test2@Email.com
+Test|(123) 456-7890|test@Email.com|
+Tes|2345678901|

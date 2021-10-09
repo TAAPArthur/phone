@@ -58,7 +58,8 @@ case $action in
     -d|*)
         name=$1
         shift
-        number=$(contacts get-number "$name")
+        number=$(contacts get-number "$name" || echo "$name")
+        echo "$number" | grep -q '^[0-9]+$'
         cmd="ATD$number$*;"
         LOG_ACTION=DIAL
         LOG_PARAM=$number

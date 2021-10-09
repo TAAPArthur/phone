@@ -1,5 +1,5 @@
 #!/bin/sh -e
-export CONTACTS_FILE=tests/sample_contacts.json
+export CONTACTS_DIR=tests
 failTest() {
     echo "############################"
     . "$1"
