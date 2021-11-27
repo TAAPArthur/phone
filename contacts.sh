@@ -72,4 +72,7 @@ case "$1" in
     get-email)
         getEmailFromName "$2"
         ;;
+    get-sms-file)
+        echo "$LOCAL_PHONE_DIR/ByName/$2/sms.txt"
+        ;;
 esac
