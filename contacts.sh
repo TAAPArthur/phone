@@ -54,7 +54,9 @@ case "$1" in
                 number=$(basename "$dir" | sed -E "s/[^0-9]+//g")
                 [ -z "$number" ] && continue
                 for name in $(getNameFromNumber "$number" || true); do
-                    [ -n "$name" ] && ln -sf "../ByNumber/$number" "$LOCAL_PHONE_DIR/ByName/$name"
+                    if [ -n "$name" ] && ! [ "$LOCAL_PHONE_DIR/ByNumber/$number" -ef "$LOCAL_PHONE_DIR/ByName/$name" ]; then
+                        ln -sf "../ByNumber/$number" "$LOCAL_PHONE_DIR/ByName/$name"
+                    fi
                 done
             done
         }
