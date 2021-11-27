@@ -21,7 +21,7 @@ case "$1" in
         ;;
     list-recents)
         cd "$PHONE_DIR" || exit
-        find ByNumber/ -type f -exec stat -c "%Y %n" {} \; | sort -r | head -n10 | cut -d"/" -f2 | {
+        find ByNumber/ -type f -exec stat -c "%Y %n" {} \; | sort -r -n | head -n10 | cut -d"/" -f2 | {
             while read -r number; do
                 getNameFromNumber "$number" || echo "$number"
             done
