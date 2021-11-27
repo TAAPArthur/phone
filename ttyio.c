@@ -23,6 +23,7 @@ int ttyFD;
 int status = SUCCESS;
 int waiting = 0;
 char lastLabel[255];
+char lastInput[255];
 static Response* lastResponse;
 int isWaiting() {
     return waiting;
@@ -88,7 +89,11 @@ int spawnResponse(Response* response, const char* arg) {
     static char buffer[CMD_BUFFER];
     const char*cmd = response->cmd;
 
-    if(response->flags & ADD_RESPONSE_FLAG) {
+
+    if(response->flags & USE_LAST_INPUT) {
+        sprintf(buffer, response->cmd, lastInput);
+        cmd = buffer;
+    } else if(response->flags & ADD_RESPONSE_FLAG) {
         if(response->flags & STRIP_LABEL)
             arg += strlen(response->response);
         sprintf(buffer, response->cmd, arg);
@@ -302,7 +307,7 @@ int __attribute__((weak)) main(int argc, const char * argv[]) {
     struct pollfd fds[] = {{ttyFD, POLLIN}, {STDIN_FILENO, POLLIN}};
     int numFDs = LEN(fds);
     while(poll(fds, numFDs, -1) >= 0) {
-        char buf[4096] = {0};
+        static char buf[1024] = {0};
         assert(numFDs);
         for(int i = 0; i < numFDs; i++) {
             if(fds[i].revents & POLLIN) {
@@ -327,6 +332,7 @@ int __attribute__((weak)) main(int argc, const char * argv[]) {
                         processResponse(data);
                     } else if(!isWaiting()) {
                         DEBUG("INPUT   : '%s' (%ld)\n",  data, strlen(data));
+                        strncpy(lastInput, data, sizeof(lastInput)-1);
                         writeData(data);
                         writeData(LN_ENDING);
                         setWaiting(1);

@@ -26,6 +26,7 @@ void clearWaiting();
 #define STRIP_LABEL 2
 #define ADD_RESPONSE_FLAG 4
 #define ONLY_IF_WAITING 8
+#define USE_LAST_INPUT 16
 typedef struct {
     const char* response;
     void(*f)(const char*s);

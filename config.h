@@ -8,7 +8,7 @@ const char * device = "/dev/ttyUSB2";
 
 Response responses[] = {
     {"OK", markSuccess},
-    {">", clearWaiting, .cmd = "save-sms %s", .flags = MULTI_LINE_FLAG | ADD_RESPONSE_FLAG },
+    {">", clearWaiting, .cmd = "save-sms %s", .flags = MULTI_LINE_FLAG| USE_LAST_INPUT },
     {"+CME ERROR: ", markError},
     {"ERROR", markError},
     {"RING", .cmd = "call --ring"},
