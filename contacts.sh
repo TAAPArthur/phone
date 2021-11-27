@@ -4,15 +4,15 @@ PHONE_DIR=${PHONE_DIR:-/var/phone}
 LOCAL_PHONE_DIR=${LOCAL_PHONE_DIR:-~/Phone}
 
 getNameFromNumber() {
-    cat "$CONTACTS_DIR"/contacts* | grep -v "^#" | sed -E "s/\+?\s*\(?\s*([0-9]+)\s*-?\)?/\1/g" | grep -e "$1" -e "${1#1}" | head -n1 | cut -d"|" -f 1 | grep .
+    grep -h -v "^#" "$CONTACTS_DIR"/contacts* | sed -E "s/\+?\s*\(?\s*([0-9]+)\s*-?\)?/\1/g" | grep -E -e "\|$1(\||\$)" -e "\|${1#1}(\||\$)" -e "\|1$1(\||\$)" | head -n1 | cut -d"|" -f 1 | grep .
 }
 
 getNumberFromName() {
-    cat "$CONTACTS_DIR"/contacts* | grep "^$1|" | cut -d"|" -f2 | sed -E "s/[^0-9]+//g" | head -n1 | grep .
+    grep "^$1|" "$CONTACTS_DIR"/contacts* | cut -d"|" -f2 | sed -E "s/[^0-9]+//g" | head -n1 | grep .
 }
 
 getEmailFromName() {
-    cat "$CONTACTS_DIR"/contacts* | grep "^$1|" | head -n1 | grep -Po "[^|@]+@[^|@]+"
+    grep "^$1|" "$CONTACTS_DIR"/contacts* |  head -n1 | grep -Po "[^|@]+@[^|@]+"
 }
 
 case "$1" in
@@ -23,7 +23,7 @@ case "$1" in
         cd "$PHONE_DIR" || exit
         find ByNumber/ -type f -exec stat -c "%Y %n" {} \; | sort -r | head -n10 | cut -d"/" -f2 | {
             while read -r number; do
-                getNameFromNumber "$number"
+                getNameFromNumber "$number" || echo "$number"
             done
         }
         ;;
