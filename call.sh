@@ -64,18 +64,16 @@ case $action in
         name=$action
         [ "$action" = -d ] && name=$1 && shift
         number=$(contacts get-number "$name" || echo "$name")
-        echo "$number" | grep -q '^[0-9]+$'
+        echo "$number" | grep -E -q '^[0-9]+$'
         cmd="ATD$number$*;"
         LOG_ACTION=DIAL
         LOG_PARAM=$number
     ;;
 esac
 
-
 wait-for-phone-response $$ &
 pid=$!
 echo "#LABEL=$$ $cmd" | mqsend phone
 wait $pid
-if [ -n "$LOG_ACTION" ]; then
-    log $LOG_ACTION "$LOG_PARAM"
-fi
+
+logger "$LOG_ACTION $LOG_PARAM"
