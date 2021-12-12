@@ -16,10 +16,13 @@ getEmailFromName() {
 }
 
 case "$1" in
-    list)
-        cat "$CONTACTS_DIR"/contacts* | cut -d"|" -f 1
+    list-all)
+        grep -h -v "^#" "$CONTACTS_DIR"/contacts* | cut -d"|" -f 1
         ;;
-    list-recents)
+    list)
+        grep -h -v "^#" "$CONTACTS_DIR"/contacts.txt | cut -d"|" -f 1
+        ;;
+    list-recent*)
         cd "$PHONE_DIR" || exit
         find ByNumber/ -type f -exec stat -c "%Y %n" {} \; | sort -r -n | head -n10 | cut -d"/" -f2 | {
             while read -r number; do
