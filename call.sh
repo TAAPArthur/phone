@@ -11,7 +11,8 @@ action=$1
 shift
 case $action in
     --ring)
-        log RING "$2"
+        log RING "$1"
+        ringd -s "$1"
         exit
     ;;
     --log-dial)
