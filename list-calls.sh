@@ -1,24 +1,24 @@
 #!/bin/sh -e
 
-filter="^[0-9]*,"
+BASE_FILTER=" [0-9]*,[0-9]*,"
 case "$1" in
     -a) # active
-        filter=0
+        filter=${BASE_FILTER}0
         ;;
     -h) # held
-        filter=1
+        filter=${BASE_FILTER}1
         ;;
     -d) # dialing
-        filter=2
+        filter=${BASE_FILTER}2
         ;;
     -l) # alerting
-        filter=3
+        filter=${BASE_FILTER}3
         ;;
     -r|-i) # ringing/incoming
-        filter=4
+        filter=${BASE_FILTER}4
         ;;
     -w) # waiting
-        filter=5
+        filter=${BASE_FILTER}5
         ;;
     "")
         filter=""
@@ -26,7 +26,7 @@ case "$1" in
 esac
 
 # Fields id dir stat mode mpty number type alpha
-wait-for-phone-response $$ | grep "$filter" &
+wait-for-phone-response $$ | grep -E "$filter" &
 pid=$!
 echo "#LABEL=$$ AT+CLCC" | mqsend phone
 wait $pid
