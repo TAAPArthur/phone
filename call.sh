@@ -61,8 +61,8 @@ case $action in
         LOG_PARAM=$1
     ;;
     -d|*)
-        name=$1
-        shift
+        name=$action
+        [ "$action" = -d ] && name=$1 && shift
         number=$(contacts get-number "$name" || echo "$name")
         echo "$number" | grep -q '^[0-9]+$'
         cmd="ATD$number$*;"
