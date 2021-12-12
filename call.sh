@@ -14,6 +14,10 @@ case $action in
         log RING "$2"
         exit
     ;;
+    --log-dial)
+        log DIAL "$1"
+        exit
+        ;;
     -e)
         log END
         exit
