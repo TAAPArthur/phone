@@ -57,6 +57,10 @@ void markError(){
     signalLastProcess(1);
     setStatus(ERROR);
 }
+void markTimeout(){
+    signalLastProcess(9);
+    setStatus(ERROR);
+}
 void clearWaiting(){setStatus(IN_PROGRESS);}
 void writeData(const char* s) {
     DEBUG("Attempting to write '%s' to tty\n", s);
@@ -306,16 +310,23 @@ int __attribute__((weak)) main(int argc, const char * argv[]) {
 
     struct pollfd fds[] = {{ttyFD, POLLIN}, {STDIN_FILENO, POLLIN}};
     int numFDs = LEN(fds);
+    int waitingCount = 0;
     while(poll(fds, numFDs, -1) >= 0) {
         static char buf[1024] = {0};
         assert(numFDs);
         for(int i = 0; i < numFDs; i++) {
             if(fds[i].revents & POLLIN) {
                 if(isWaiting() && ttyFD != fds[i].fd) {
+                    if(waitingCount++ >= 180) {
+                        DEBUG("Timed out waiting for modem\n");
+                        markTimeout();
+                        break;
+                    }
                     DEBUG("Waiting on modem\n");
                     sleep(1);
                     break;
                 }
+                waitingCount = 0;
                 int ret = readLine(fds[i].fd, buf);
                 if(ret == -1) {
                     DEBUG("Reached end of device %d", i);
