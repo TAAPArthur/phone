@@ -20,10 +20,10 @@ ttyio: ttyio.c
 	$(CC) $(CFLAGS) -o $@ $^
 
 sms-test: sms.c tests/sms_unit.c
-	$(CC) $(CFLAGS) $^ -o $@ $(LDFLAGS) -lscutest
+	$(CC) $(CFLAGS) $^ -o $@ $(LDFLAGS)
 
 ttyio-test: ttyio.c tests/ttyio_unit.c
-	$(CC) $(CFLAGS) $^ -o $@ $(LDFLAGS) -lscutest
+	$(CC) $(CFLAGS) $^ -o $@ $(LDFLAGS)
 
 test: CFLAGS += -O0 -g
 test: sms-test ttyio-test *.sh all

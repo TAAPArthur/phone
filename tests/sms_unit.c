@@ -1,9 +1,11 @@
-#include <scutest/tester.h>
-#include "../sms.h"
+#define SCUTEST_IMPLEMENTATION
+#include <scutest/scutest.h>
+
 #include <assert.h>
 #include <stdint.h>
-#include <string.h>
 #include <stdio.h>
+#include <string.h>
+#include "../sms.h"
 
 char readBits(uint8_t *byte, int N);
 char readBit(uint8_t *byte);

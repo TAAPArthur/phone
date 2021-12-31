@@ -1,4 +1,6 @@
-#include <scutest/tester.h>
+#define SCUTEST_IMPLEMENTATION
+#include <scutest/scutest.h>
+
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
