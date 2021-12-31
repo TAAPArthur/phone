@@ -1,3 +1,4 @@
+#define SCUTEST_DEFINE_MAIN
 #define SCUTEST_IMPLEMENTATION
 #include <scutest/scutest.h>
 
@@ -69,8 +70,4 @@ SCUTEST(test_argument_no_lock) {
 SCUTEST(test_argument_lock_different_device) {
     processArgs((const char*[]){"/dev/null", NULL});
     processArgs((const char*[]){"/dev/zero", NULL});
-}
-
-int main(int argc, char * argv[]) {
-    return runUnitTests();
 }

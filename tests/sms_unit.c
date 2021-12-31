@@ -1,3 +1,4 @@
+#define SCUTEST_DEFINE_MAIN
 #define SCUTEST_IMPLEMENTATION
 #include <scutest/scutest.h>
 
@@ -84,9 +85,3 @@ SCUTEST_ITER(test_decode_padded_sept2, 2) {
     decodeSeptWithPadding(str, strlen(str), padding?6:0, buffer);
     assert(strcmp(buffer, "Hello world")==0);
 }
-
-int main(int argc, char * argv[]) {
-    return runUnitTests();
-}
-
-
