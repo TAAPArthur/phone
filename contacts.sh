@@ -56,8 +56,8 @@ case "$1" in
             while read -r dir; do
                 number=$(basename "$dir" | sed -E "s/[^0-9]+//g")
                 [ -z "$number" ] && continue
-                for name in $(getNameFromNumber "$number" || true); do
-                    if [ -n "$name" ] && ! [ "$LOCAL_PHONE_DIR/ByNumber/$number" -ef "$LOCAL_PHONE_DIR/ByName/$name" ]; then
+                getNameFromNumber "$number" | while read -r name; do
+                    if [ -n "$name" ] && ! test "$LOCAL_PHONE_DIR/ByNumber/$number" -ef "$LOCAL_PHONE_DIR/ByName/$name" ; then
                         ln -sf "../ByNumber/$number" "$LOCAL_PHONE_DIR/ByName/$name"
                     fi
                 done
