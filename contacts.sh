@@ -3,15 +3,22 @@ CONTACTS_DIR=${CONTACTS_DIR:-$HOME/Contacts}
 PHONE_DIR=${PHONE_DIR:-/var/phone}
 LOCAL_PHONE_DIR=${LOCAL_PHONE_DIR:-~/Phone}
 
+verify() {
+    [ -n "$1" ]
+}
+
 getNameFromNumber() {
+    verify "$1"
     grep -h -v "^#" "$CONTACTS_DIR"/contacts* | sed -E "s/\+?\s*\(?\s*([0-9]+)\s*-?\)?/\1/g" | grep -E -e "\|$1(\||\$)" -e "\|${1#1}(\||\$)" -e "\|1$1(\||\$)" | head -n1 | cut -d"|" -f 1 | grep .
 }
 
 getNumberFromName() {
+    verify "$1"
     grep "^$1|" "$CONTACTS_DIR"/contacts* | cut -d"|" -f2 | sed -E "s/[^0-9]+//g" | head -n1 | grep .
 }
 
 getEmailFromName() {
+    verify "$1"
     grep "^$1|" "$CONTACTS_DIR"/contacts* |  head -n1 | grep -Po "[^|@]+@[^|@]+"
 }
 
