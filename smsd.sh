@@ -12,6 +12,7 @@ mqbus-receive smsd |  {
     export NUMBER MSG
     while read -r NUMBER MSG; do
         (
+            MSG=$(echo "$MSG" | tr "\v" "\n")
             for file in "$SMSD_DIR"/*.sh; do
                 [ -r "$file" ] && . "$file"
             done

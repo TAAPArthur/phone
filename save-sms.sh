@@ -17,10 +17,13 @@ sms -d "$1" | {
     fi
     read -r encoding
 
-    msg="$(cat -)"
+    msg="$(tr "\n" "\v")"
     echo "Saving $timestamp $number $headerString $msg"
     SMS_DIR="$PHONE_DIR/ByNumber/$number/"
     mkdir -p "$SMS_DIR"
     printf "%s\t%s\t%s\t%s\t%s\0\n" "$(date +%FT%H:%M:%S%z)" "$timestamp" "$headerString" "$encoding" "$msg" >> "$SMS_DIR/sms.txt"
-    echo "$number $msg" | tr "\r" "\n" | smsd -s
+    echo "$number $msg" | smsd -s
+} || {
+    echo "Encounter error; saving encoded message"
+    echo "$1" >> "$PHONE_DIR/error.log"
 }
