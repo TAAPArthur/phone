@@ -27,7 +27,7 @@ case "$1" in
         grep -h -v "^#" "$CONTACTS_DIR"/contacts* | cut -d"|" -f 1
         ;;
     list)
-        grep -h -v "^#" "$CONTACTS_DIR"/contacts.txt | cut -d"|" -f 1
+        grep -h -v "^#" "$CONTACTS_DIR/${CONTACTS_MAIN_FILE_NAME:-contacts.txt}" | cut -d"|" -f 1
         ;;
     list-recent*)
         cd "$PHONE_DIR" || exit
