@@ -1,3 +1,5 @@
+#include "config.h"
+#include "ttyio.h"
 #include <assert.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -8,8 +10,6 @@
 #include <sys/file.h>
 #include <sys/wait.h>
 #include <unistd.h>
-#include "ttyio.h"
-#include "config.h"
 #define LEN(A) (sizeof(A)/sizeof(A[0]))
 
 #ifndef NDEBUG

@@ -1,15 +1,15 @@
-#include <stdio.h>
-#include <string.h>
-#include <stdio.h>
-#include <assert.h>
-#include <stdlib.h>
-#include <fcntl.h>
-#include <stdlib.h>
-#include <assert.h>
-#include <unistd.h>
 #include "sms.h"
-#include <sys/types.h>
+#include <assert.h>
+#include <assert.h>
+#include <fcntl.h>
 #include <stdint.h>
+#include <stdio.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/types.h>
+#include <unistd.h>
 
 char LN_TERMINATOR = '\n';
 short refNumber;
