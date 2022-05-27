@@ -1,5 +1,5 @@
 #!/bin/sh
-./contacts.sh list
+CONTACTS_MAIN_FILE_NAME=contacts_sample.txt ./contacts.sh list
 # Spaces test.Other
 # Spaces test
 # Test

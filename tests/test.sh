@@ -8,7 +8,7 @@ failTest() {
     exit 3
 }
 N=0
-for script in tests/0*.sh; do
+for script in tests/"${1:-0}"*.sh; do
     printf "%s..." "$script"
     exec 3<<EOF
 $(grep '# ' "$script" | cut -d' ' -f2-)
