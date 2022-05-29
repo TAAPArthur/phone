@@ -14,4 +14,8 @@ case $1 in
     off)
         changePower 0
     ;;
+    toggle)
+        changePower 0
+        changePower 1
+    ;;
 esac
