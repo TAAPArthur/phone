@@ -22,7 +22,9 @@ sms -d "$1" | {
     SMS_DIR="$PHONE_DIR/ByNumber/$number/"
     mkdir -p "$SMS_DIR"
     printf "%s\t%s\t%s\t%s\t%s\0\n" "$(date +%FT%H:%M:%S%z)" "$timestamp" "$headerString" "$encoding" "$msg" >> "$SMS_DIR/sms.txt"
-    echo "$number $msg" | smsd -s
+    SENT=0
+    [ "$date" = 0 ] && SENT=1
+    echo "$number $SENT $msg" | smsd -s
 } || {
     echo "Encounter error; saving encoded message"
     echo "$1" >> "$PHONE_DIR/error.log"
