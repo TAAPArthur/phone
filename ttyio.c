@@ -170,9 +170,8 @@ void processResponse(const char* response) {
 }
 
 int readLine(int fd, char*buffer) {
-    int len = 512;
     int i;
-    for(i=0;i<len;i++){
+    for(i=0;i<MAX_MSG_SIZE - 1;){
         int ret = read(fd, buffer+i, 1);
 
         if(ret == 0) {
@@ -182,13 +181,21 @@ int readLine(int fd, char*buffer) {
                 break;
         }
         else if(ret == -1) {
-            perror("error reading?");
+            if(errno == EAGAIN) {
+                continue;
+            }
+            perror("error reading");
             break;
         }
         if(buffer[i] == '\n' || buffer[i] == '\r'){
             buffer[i]=0;
             break;
         }
+        if(buffer[0] == '>' && buffer[1] == ' ' && i == 1){
+            buffer[i]=0;
+            break;
+        }
+        i+=ret;
     }
     buffer[i]=0;
     return i;
