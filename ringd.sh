@@ -11,6 +11,7 @@ mqbus-receive ringd |  {
     mkdir -p "$RINGD_DIR"
     export NUMBER TYPE SUBADDR SATYPE ALPHA VALIDITY
     while IFS="," read -r NUMBER TYPE SUBADDR SATYPE ALPHA VALIDITY; do
+        [ -n "$NUMBER" ] || continue
         (
             for file in "$RINGD_DIR"/*.sh; do
                 [ -r "$file" ] && . "$file"
