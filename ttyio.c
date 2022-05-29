@@ -282,6 +282,7 @@ int processArgs(const char* const* argv){
     }
     if(checkOnly)
         exit(0);
+    DEBUG("Running startup commands %s\n", path);
     static char buffer[CMD_BUFFER];
     for(int i = 0; i < LEN(onStartDeviceCmds); i++) {
         snprintf(buffer, LEN(buffer) - 1, onStartDeviceCmds[i], path);
@@ -312,6 +313,7 @@ int __attribute__((weak)) main(int argc, const char * argv[]) {
     int numFDs = LEN(fds);
     int waitingCount = 0;
     while(poll(fds, numFDs, -1) >= 0) {
+        DEBUG("polling returned\n");
         static char buf[1024] = {0};
         assert(numFDs);
         for(int i = 0; i < numFDs; i++) {
@@ -327,9 +329,11 @@ int __attribute__((weak)) main(int argc, const char * argv[]) {
                     break;
                 }
                 waitingCount = 0;
+                DEBUG("trying to read data\n");
                 int ret = readLine(fds[i].fd, buf);
+                DEBUG("returned form read %d\n", ret);
                 if(ret == -1) {
-                    DEBUG("Reached end of device %d", i);
+                    DEBUG("Reached end of device %d\n", i);
                     handEndOfFD(fds[i].fd);
                     numFDs--;
                     break;
@@ -352,14 +356,15 @@ int __attribute__((weak)) main(int argc, const char * argv[]) {
                 break;
             }
             else if(fds[i].revents & (POLLERR | POLLNVAL | POLLHUP)) {
-                DEBUG("FD error");
+                DEBUG("FD error\n");
                 handEndOfFD(fds[i].fd);
             }
         }
 
         if(!isWaiting() && numFDs ==1) {
-            DEBUG("Exiting because modem is only remaining FD");
+            DEBUG("Exiting because modem is only remaining FD\n");
             exit(0);
         }
+        DEBUG("polling\n");
     }
 }
