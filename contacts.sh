@@ -37,6 +37,12 @@ case "$1" in
             done
         }
         ;;
+    get-group)
+        grep -l "$2" "$CONTACTS_DIR/Groups/"* | while read -r file; do
+            echo "${file#*-}"
+        done
+        ;;
+
     recent-sms)
         grep -R "" "$PHONE_DIR/ByNumber" | sort -bdr -k2,3 | head -n"${1:-10}" | {
             while IFS=: read -r file data; do
