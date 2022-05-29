@@ -18,4 +18,10 @@ case $1 in
         changePower 0
         changePower 1
     ;;
+    help|-h|--help)
+        echo "pp-modem {on|off|toggle}"
+        ;;
+    *)
+        exit 1
+        ;;
 esac
