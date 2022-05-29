@@ -6,8 +6,5 @@ shift
 
 wait-for-phone-response $$ &
 pid=$!
-{
-    printf "%s" "#LABEL=$$ "
-    sms "$number" "$@"
-} | mqsend phone
+sms -c "#LABEL=$$ " "$number" "$@" | mqsend phone
 wait $pid

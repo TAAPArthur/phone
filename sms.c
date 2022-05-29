@@ -344,14 +344,14 @@ int getMaxMessageSizePerType(GSMEncodingType type) {
         case GSM_UCS2: return 70;
     }
 }
-void writeMessage(const char*encodedMessage) {
+void writeMessage(const char*encodedMessage, const char*comment) {
     static char buffer[MAX_TOTAL_SMS_LEN + 32];
     assert(strlen(buffer) <= MAX_TOTAL_SMS_LEN);
     DEBUG("Total PDU size %ld\n", strlen(encodedMessage));
-    sprintf(buffer, "AT+CMGS=%ld\n%s%c\n", (strlen(encodedMessage)-2)/2, encodedMessage, 0x1A);
+    sprintf(buffer, "%sAT+CMGS=%ld\n%s%c\n", comment, (strlen(encodedMessage)-2)/2, encodedMessage, 0x1A);
     write(STDOUT_FILENO, buffer, strlen(buffer));
 }
-void encodeSMSMessage(const char*number, const char*msg, int type) {
+void encodeSMSMessage(const char*number, const char*msg, int type, const char* comment) {
     char buffer[MAX_TOTAL_SMS_LEN ] = {0};
     const int realMessageLen = strlen(msg);
     DEBUG("Message len: %d\n", realMessageLen);
@@ -389,13 +389,13 @@ void encodeSMSMessage(const char*number, const char*msg, int type) {
             writeByte(i==numParts-1?strlen(msg + i*maxConcatLen): getMaxMessageSizePerType(type), &userMessageStart);
             writeConcatenatedSMS(&userMessageStart,refNumber, numParts , i+1);
             encodeUserMessage(userMessageStart, msg + i*maxConcatLen, maxConcatLen, type);
-            writeMessage(buffer);
+            writeMessage(buffer, comment);
         }
     } else{
         DEBUG("Using regular sms messages; current buffer: %ld\n%s \n",strlen(buffer), buffer);
         writeByte(strlen(msg), &ptr);
         encodeUserMessage(ptr, msg, realMessageLen, type);
-        writeMessage(buffer);
+        writeMessage(buffer, comment);
     }
 }
 void usage(const char* programName) {
@@ -406,14 +406,18 @@ int __attribute__((weak)) main(int argc, char * argv[]) {
     int alphabet = GSM_7_BIT;
     int decode = 0;
     int opt;
+    const char* comment = "";
     refNumber = getpid();
-    while((opt=getopt(argc, argv, "f:l:r:zhd78"))!=-1) {
+    while((opt=getopt(argc, argv, "c:f:l:r:zhd78"))!=-1) {
         switch(opt) {
             case 'r':
                refNumber = atoi(optarg);
                break;
             case 'l':
-                LN_TERMINATOR = optarg[0];
+               LN_TERMINATOR = optarg[0];
+               break;
+            case 'c':
+               comment = optarg;
                break;
             case 'z':
                 LN_TERMINATOR = 0;
@@ -460,7 +464,7 @@ int __attribute__((weak)) main(int argc, char * argv[]) {
     if(decode)
         decodeSMSMessage(msg);
     else {
-        encodeSMSMessage(number, msg, alphabet);
+        encodeSMSMessage(number, msg, alphabet, comment);
     }
     exit(0);
 }
