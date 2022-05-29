@@ -178,7 +178,7 @@ GSMEncodingType decodeUserMessage(const char**c, uint8_t headerLen, uint8_t data
     GSMEncodingType  TYPES[]={GSM_7_BIT, GSM_8_BIT, GSM_UCS2 };
     if(type <= 127 || type >= 240)
         dateEncoding = TYPES[type/4 %4];
-    DEBUG("Remainder: %s (%ld); Data len %d\n", *c, strlen(*c), dataLength);
+    TRACE("Remainder: %s (%ld); Data len %d Encoding %d \n", *c, strlen(*c), dataLength, dateEncoding );
     switch(dateEncoding ) {
         case GSM_7_BIT:
             decodeSeptWithPadding(*c, dataLength, headerLen % 7 , buffer);
@@ -246,7 +246,7 @@ void decodeUserHeaderAndMessage(const char**c, bool userDataHeaderPresent,char t
 
     uint8_t dataLength=readByte(c);
     uint8_t headerLen = 0;
-    DEBUG("User data len %d\n", dataLength);
+    TRACE("User data len %d header present %d\n", dataLength, userDataHeaderPresent);
     char message[MAX_SMS_LEN] = {0};
     if(userDataHeaderPresent) {
         headerLen = readUserHeader(c);
@@ -309,9 +309,9 @@ void decodeSMSMessage(const char*c) {
     char smscLen=readByte(&c);
     c+=smscLen*2;
     uint8_t pduType=readByte(&c);
-    DEBUG("PDU_TYPE %0x\n", pduType);
+    TRACE("PDU_TYPE %0x\n", pduType);
     char messageTypeIndicator = readBits(&pduType, 2);
-    DEBUG("Message indicator %d\n", messageTypeIndicator );
+    TRACE("Message indicator %d\n", messageTypeIndicator );
     switch(messageTypeIndicator) {
         case SMS_DELIVER:
             decodeSMSDeliver(&c, pduType);
@@ -347,14 +347,14 @@ int getMaxMessageSizePerType(GSMEncodingType type) {
 void writeMessage(const char*encodedMessage, const char*comment) {
     static char buffer[MAX_TOTAL_SMS_LEN + 32];
     assert(strlen(buffer) <= MAX_TOTAL_SMS_LEN);
-    DEBUG("Total PDU size %ld\n", strlen(encodedMessage));
+    TRACE("Total PDU size %ld\n", strlen(encodedMessage));
     sprintf(buffer, "%sAT+CMGS=%ld\n%s%c\n", comment, (strlen(encodedMessage)-2)/2, encodedMessage, 0x1A);
     write(STDOUT_FILENO, buffer, strlen(buffer));
 }
 void encodeSMSMessage(const char*number, const char*msg, int type, const char* comment) {
     char buffer[MAX_TOTAL_SMS_LEN ] = {0};
     const int realMessageLen = strlen(msg);
-    DEBUG("Message len: %d\n", realMessageLen);
+    TRACE("Message len: %d\n", realMessageLen);
     bool splitMessage = realMessageLen > getMaxMessageSizePerType(type);
     char *ptr=buffer;
     writeByte(0x00, &ptr); // SMSC info
@@ -367,7 +367,7 @@ void encodeSMSMessage(const char*number, const char*msg, int type, const char* c
     writeBit(&pduType, 1); // Reject duplicates
     writeBits(&pduType , SMS_SUBMIT, 2);
     writeByte(pduType, &ptr);
-    DEBUG("PDU: 0x%x\n",pduType);
+    TRACE("PDU: 0x%x\n",pduType);
 
     writeByte(0x00, &ptr); // tp-message-ref; will this be auto generated?
 
@@ -379,20 +379,20 @@ void encodeSMSMessage(const char*number, const char*msg, int type, const char* c
     writeByte(0x00, &ptr); // tp-pid
     writeByte(type, &ptr); // Data coding scheme
     if(splitMessage) {
-        DEBUG("Using concatenated sms messages; current buffer: \n%s\n", buffer);
+        TRACE("Using concatenated sms messages; current buffer: \n%s\n", buffer);
         int maxConcatLen = getMaxMessageSizePerType(type) - 8;
         int numParts = (realMessageLen -1) / maxConcatLen + 1;
 
         for(int i = 0; i < numParts ; i++) {
             char*userMessageStart = ptr;
-            DEBUG("Message len: %d %d %d %d\n", realMessageLen, type, i, numParts);
+            TRACE("Message len: %d %d %d %d\n", realMessageLen, type, i, numParts);
             writeByte(i==numParts-1?strlen(msg + i*maxConcatLen): getMaxMessageSizePerType(type), &userMessageStart);
             writeConcatenatedSMS(&userMessageStart,refNumber, numParts , i+1);
             encodeUserMessage(userMessageStart, msg + i*maxConcatLen, maxConcatLen, type);
             writeMessage(buffer, comment);
         }
     } else{
-        DEBUG("Using regular sms messages; current buffer: %ld\n%s \n",strlen(buffer), buffer);
+        TRACE("Using regular sms messages; current buffer: %ld\n%s \n",strlen(buffer), buffer);
         writeByte(strlen(msg), &ptr);
         encodeUserMessage(ptr, msg, realMessageLen, type);
         writeMessage(buffer, comment);

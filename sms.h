@@ -2,10 +2,10 @@
 #define SMS_H
 
 #ifdef DEBUG
-#define DEBUG(X...) dprintf(2, X)
+#define TRACE(X...) dprintf(2, X)
 #define TRACE(X...) dprintf(2, X)
 #else
-#define DEBUG(X...)
+#define TRACE(X...)
 #define TRACE(X...)
 #endif
 

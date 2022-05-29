@@ -1,6 +1,7 @@
 C_BIN := sms ttyio vibrator
 SCRIPTS := $(wildcard *.sh)
-CFLAGS := -Wall -Werror
+DEBUG_FLAGS_1 = -g -DDEBUG
+CFLAGS := -Wall -Werror $(DEBUG_FLAGS_$(DEBUG))
 
 all: $(C_BIN)
 
