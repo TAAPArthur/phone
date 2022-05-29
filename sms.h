@@ -1,7 +1,7 @@
 #ifndef SMS_H
 #define SMS_H
 
-#ifndef NDEBUG
+#ifdef DEBUG
 #define DEBUG(X...) dprintf(2, X)
 #define TRACE(X...) dprintf(2, X)
 #else

@@ -12,12 +12,15 @@
 #include <unistd.h>
 #define LEN(A) (sizeof(A)/sizeof(A[0]))
 
-#ifndef NDEBUG
-#define DEBUG(X...) dprintf(2, X)
+#ifdef DEBUG
+#define LOG(X...) dprintf(2, X)
+#else
+#define LOG(X...)
 #endif
 
-#define OUTPUT(X...) do {dprintf(1, X); DEBUG(X);} while(0)
+#define OUTPUT(X...) do {dprintf(1, X); LOG(X);} while(0)
 
+#define MAX_MSG_SIZE 1024
 const char MSG_ENDING_STR[] = {MSG_ENDING};
 int ttyFD;
 int status = SUCCESS;
@@ -63,7 +66,7 @@ void markTimeout(){
 }
 void clearWaiting(){setStatus(IN_PROGRESS);}
 void writeData(const char* s) {
-    DEBUG("Attempting to write '%s' to tty\n", s);
+    LOG("Attempting to write '%s' to tty\n", s);
     if(write(ttyFD, s, strlen(s)) == -1) {
         perror("Failed to write data");
         exit(1);
@@ -73,7 +76,7 @@ void writeData(const char* s) {
 
 
 int spawn(const char* cmd) {
-    DEBUG("Executing command %s\n", cmd);
+    LOG("Executing command %s\n", cmd);
     int pid = fork();
     if(!pid) {
         dup2(STDERR_FILENO, STDOUT_FILENO);
@@ -85,7 +88,7 @@ int spawn(const char* cmd) {
     int status = 0;
     waitpid(pid, &status, 0);
     int exitCode = WIFEXITED(status) ? WEXITSTATUS(status) : WIFSIGNALED(status) ? WTERMSIG(status) : -1;
-    DEBUG("cmd exited with status %d\n", exitCode);
+    LOG("cmd exited with status %d\n", exitCode);
     return exitCode;
 }
 
@@ -116,7 +119,7 @@ void receiveSMSNotification(const char*s) {
     char messageArea[3]={0};
     int index;
     int ret = sscanf(s, "%*s \"%2s\",%d", messageArea, &index);
-    DEBUG("Received SMS message ME:'%s' index: %d\n", messageArea, index);
+    LOG("Received SMS message ME:'%s' index: %d\n", messageArea, index);
     assert(ret==2);
     char buffer[16];
     sprintf(buffer,"AT+CMGR=%d%s", index, LN_ENDING);
@@ -127,10 +130,10 @@ void receiveSMSNotification(const char*s) {
 void deleteSMS() {
     char buffer[16];
     if(getenv(SMS_INDEX_ENV_NAME)) {
-        DEBUG("Attempting to delete sms msg at index %s", getenv(SMS_INDEX_ENV_NAME));
+        LOG("Attempting to delete sms msg at index %s", getenv(SMS_INDEX_ENV_NAME));
         sprintf(buffer,"AT+CMGD=%s%s", getenv(SMS_INDEX_ENV_NAME), LN_ENDING);
         writeData(buffer);
-        DEBUG("Sent deletion");
+        LOG("Sent deletion");
     }
 }
 void readSMS(const char*s) {
@@ -150,7 +153,7 @@ void processResponse(const char* response) {
     for(int i=0;i<LEN(responses);i++) {
         if(memcmp(responses[i].response, response, strlen(responses[i].response)) == 0 && (!(responses[i].flags & ONLY_IF_WAITING) || isWaiting())) {
             lastResponse = responses + i;
-            DEBUG("Triggering response %d: %s\n", i, responses[i].response);
+            LOG("Triggering response %d: %s\n", i, responses[i].response);
             if(responses[i].f) {
                 responses[i].f(response);
                 return;
@@ -196,11 +199,11 @@ void onStart(int ttyFD) {
     setWaiting(0);
     struct pollfd fds[] = {{ttyFD, POLLIN}};
     for(int i = 0; i < LEN(onStartCmds); i++) {
-        DEBUG("Running command %d\n", i);
+        LOG("Running command %d\n", i);
         writeData(onStartCmds[i]);
         writeData(LN_ENDING);
         while(isWaiting()){
-            char buf[4096]={0};
+            char buf[MAX_MSG_SIZE]={0};
             int ret = poll(fds, 1, -1);
             if(ret == -1) {
                 perror("Poll");
@@ -208,9 +211,9 @@ void onStart(int ttyFD) {
             }
             int chars = readLine(ttyFD, buf);
             if (chars) {
-                DEBUG("'%s' (%ld)\n",  buf, strlen(buf));
+                LOG("'%s' (%ld)\n",  buf, strlen(buf));
                 processResponse(buf);
-                DEBUG("Finished: '%s' (%ld)\n",  buf, strlen(buf));
+                LOG("Finished: '%s' (%ld)\n",  buf, strlen(buf));
             }
         }
     }
@@ -263,6 +266,7 @@ int processArgs(const char* const* argv){
     }
     const char* path = argv[0]?argv[0]:device;
 
+    LOG("Opening fd %s\n", path);
     int fd = open(path, O_RDWR|O_NONBLOCK|O_CLOEXEC);
     if(fd ==-1) {
         perror("Failed open file");
@@ -282,7 +286,7 @@ int processArgs(const char* const* argv){
     }
     if(checkOnly)
         exit(0);
-    DEBUG("Running startup commands %s\n", path);
+    LOG("Running startup commands %s\n", path);
     static char buffer[CMD_BUFFER];
     for(int i = 0; i < LEN(onStartDeviceCmds); i++) {
         snprintf(buffer, LEN(buffer) - 1, onStartDeviceCmds[i], path);
@@ -294,7 +298,7 @@ int processArgs(const char* const* argv){
 void handEndOfFD(int fd) {
     if(fd == STDIN_FILENO) {
         if(!isWaiting()) {
-            DEBUG("Reached end of FD");
+            LOG("Reached end of FD");
             exit(status);
         }
     } else {
@@ -305,35 +309,32 @@ void handEndOfFD(int fd) {
 int __attribute__((weak)) main(int argc, const char * argv[]) {
     signal(SIGPIPE, SIG_IGN);
     ttyFD  = processArgs(argv + 1);
-    DEBUG("Initializing\n");
+    LOG("Initializing\n");
     onStart(ttyFD);
-    DEBUG("Starting\n");
+    LOG("Starting\n");
 
     struct pollfd fds[] = {{ttyFD, POLLIN}, {STDIN_FILENO, POLLIN}};
     int numFDs = LEN(fds);
     int waitingCount = 0;
     while(poll(fds, numFDs, -1) >= 0) {
-        DEBUG("polling returned\n");
-        static char buf[1024] = {0};
+        static char buf[MAX_MSG_SIZE] = {0};
         assert(numFDs);
         for(int i = 0; i < numFDs; i++) {
             if(fds[i].revents & POLLIN) {
                 if(isWaiting() && ttyFD != fds[i].fd) {
                     if(waitingCount++ >= 180) {
-                        DEBUG("Timed out waiting for modem\n");
+                        LOG("Timed out waiting for modem\n");
                         markTimeout();
                         break;
                     }
-                    DEBUG("Waiting on modem\n");
+                    LOG("Waiting on modem\n");
                     sleep(1);
                     break;
                 }
                 waitingCount = 0;
-                DEBUG("trying to read data\n");
                 int ret = readLine(fds[i].fd, buf);
-                DEBUG("returned form read %d\n", ret);
                 if(ret == -1) {
-                    DEBUG("Reached end of device %d\n", i);
+                    LOG("Reached end of device %d\n", i);
                     handEndOfFD(fds[i].fd);
                     numFDs--;
                     break;
@@ -342,11 +343,11 @@ int __attribute__((weak)) main(int argc, const char * argv[]) {
                 const char* data = processMetadata(buf);
                 if (data && data[0]) {
                     if(ttyFD == fds[i].fd) {
-                        DEBUG("RESPONSE: '%s' (%ld)\n",  data, strlen(data));
+                        LOG("RESPONSE: '%s' (%ld)\n",  data, strlen(data));
                         echoResponse(data);
                         processResponse(data);
                     } else if(!isWaiting()) {
-                        DEBUG("INPUT   : '%s' (%ld)\n",  data, strlen(data));
+                        LOG("INPUT   : '%s' (%ld)\n",  data, strlen(data));
                         strncpy(lastInput, data, sizeof(lastInput)-1);
                         writeData(data);
                         writeData(LN_ENDING);
@@ -356,15 +357,14 @@ int __attribute__((weak)) main(int argc, const char * argv[]) {
                 break;
             }
             else if(fds[i].revents & (POLLERR | POLLNVAL | POLLHUP)) {
-                DEBUG("FD error\n");
+                LOG("FD error %d\n", fds[i].revents);
                 handEndOfFD(fds[i].fd);
             }
         }
 
         if(!isWaiting() && numFDs ==1) {
-            DEBUG("Exiting because modem is only remaining FD\n");
+            LOG("Exiting because modem is only remaining FD\n");
             exit(0);
         }
-        DEBUG("polling\n");
     }
 }
